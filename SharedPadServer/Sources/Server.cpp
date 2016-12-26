@@ -114,7 +114,23 @@ void *Server::handleClient(void *client)
     // Read the request from the client's socket
     int jsonRequestLength = readJsonRequestLength(currentClient);
     char *jsonRequest = readJsonRequest(currentClient, jsonRequestLength);
+
+    if (jsonRequest == nullptr)
+    {
+        free(jsonRequest);
+        pthread_detach(pthread_self());
+        pthread_exit(nullptr);
+    }
+
     rapidjson::Document *jsonDocument = JsonRequestMessageParser::parseJsonMessage(jsonRequest);
+
+    if (jsonDocument == nullptr)
+    {
+        free(jsonRequest);
+        free(jsonDocument);
+        pthread_detach(pthread_self());
+        pthread_exit(nullptr);
+    }
 
     // Execute request and send a response back to the client
     GenericResponseMessage *message = executeRequest(currentClient, jsonDocument);
@@ -330,7 +346,7 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
         // Username is already registered, send a "login failed" response back to the client
         response->setCode(LOGIN_FAILED_CODE);
         response->setCodeDescription(LOGIN_FAILED);
-        printf("%s","Login NOT approved.\n");
+        printf("%s","Login NOT approved. Username is already logged.\n");
     }
 
     return response;

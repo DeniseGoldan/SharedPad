@@ -2,6 +2,8 @@
 #define JSONMESSAGEGENERATOR_H
 
 #include <string>
+
+#include "spdlog/spdlog.h"
 #include "rapidjson/writer.h"
 #include "GenericRequestMessage.h"
 

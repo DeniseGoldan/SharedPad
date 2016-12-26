@@ -1,6 +1,6 @@
 #ifndef JSONRESPONSEMESSAGEPARSER_H
 #define JSONRESPONSEMESSAGEPARSER_H
-
+#include "spdlog/spdlog.h"
 #include "rapidjson/document.h"
 
 class JsonResponseMessageParser

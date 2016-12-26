@@ -69,7 +69,8 @@ GenericResponseMessage* Client::login(std::string username){
     loginRequest.setUsername(username);
 
     std::string jsonLoginRequest = JsonRequestMessageGenerator::getJsonLoginRequestMessage(loginRequest);
-    return Client::sendRequestToServer(jsonLoginRequest);
+    GenericResponseMessage* responseFromServer = Client::sendRequestToServer(jsonLoginRequest);
+    return responseFromServer;
 }
 
 int Client::readJsonResponseLengthFromServer(int socketFD)
@@ -163,11 +164,15 @@ char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
 GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
 
     GenericResponseMessage* response = new GenericResponseMessage();
+    namespace spd = spdlog;
+    auto logger = spd::stdout_color_mt("logger");
+    logger->info("sendRequestToServer()");
 
     // Establish communication with the server
     int socketFD = Client::establishConnection();
 
     if (-1 == socketFD){
+        logger->warn("Establishing connection failed.");
         response->setCode(CONNECTION_FAILED_CODE);
         response->setCodeDescription(CONNECTION_FAILED);
         ErrorHandler::handleErrorWithoutExit("Establishing connection failed.\n");
@@ -199,29 +204,26 @@ GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
             return response;
         } else if (0 == count)//connection closed meanwhile
         {
+            logger->info("count == 0");
             free(prefixedJsonRequest);
         }
         totalBytesSent += count;
         totalBytesLeftToSend -= count;
     }
 
-    free(prefixedJsonRequest);
-    printf("%s", prefixedJsonRequest);
-
     // Reading server's response to the client's request
     length = Client::readJsonResponseLengthFromServer(socketFD);
     char * responseFromServer = Client::readJsonResponseFromServer(socketFD,length);
-
-    printf("%s\n",responseFromServer);
 
     rapidjson::Document *jsonDocument = JsonResponseMessageParser::parseJsonMessage(responseFromServer);
     free(responseFromServer);
 
     if (jsonDocument == nullptr)
     {
+        logger->warn("jsonDocument is nullptr");
         response->setCode(JSON_PARSING_FAILED_CODE);
         response->setCodeDescription(JSON_PARSING_FAILED);
-        ErrorHandler::handleErrorWithoutExit("Json document is nullptr. Parsing the request failed.\n");
+        ErrorHandler::handleErrorWithoutExit("Json document is nullptr. Parsing the response failed.\n");
         return response;
     }
 
@@ -231,7 +233,7 @@ GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
     newDocument.CopyFrom(*jsonDocument, newDocument.GetAllocator());
     response->setCode(newDocument[CODE].GetInt());
     response->setCodeDescription(newDocument[CODE_DESCRIPTION].GetString());
-
+    logger->info("End of function.");
     close(socketFD);
     return response;
 }

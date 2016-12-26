@@ -1,14 +1,8 @@
 #include "GenericRequestMessage.h"
 
-GenericRequestMessage::GenericRequestMessage()
-{
+GenericRequestMessage::GenericRequestMessage(){}
 
-}
-
-GenericRequestMessage::~GenericRequestMessage()
-{
-
-}
+GenericRequestMessage::~GenericRequestMessage(){}
 
 const std::string &GenericRequestMessage::getUsername() const
 {
