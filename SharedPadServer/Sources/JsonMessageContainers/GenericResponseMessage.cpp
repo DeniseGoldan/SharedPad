@@ -1,12 +1,8 @@
 #include "../../Headers/JsonMessageContainers/GenericResponseMessage.h"
 
-GenericResponseMessage::GenericResponseMessage()
-{
-}
+GenericResponseMessage::GenericResponseMessage(){}
 
-GenericResponseMessage::~GenericResponseMessage()
-{
-}
+GenericResponseMessage::~GenericResponseMessage(){}
 
 int GenericResponseMessage::getCode() const
 {

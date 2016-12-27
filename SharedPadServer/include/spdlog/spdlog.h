@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include <spdlog/tweakme.h>
-#include <spdlog/common.h>
-#include <spdlog/logger.h>
+#include "tweakme.h"
+#include "common.h"
+#include "logger.h"
 
 #include <memory>
 #include <functional>
@@ -21,7 +21,7 @@ namespace spdlog
 {
 
 //
-// Return an existing logger or nullptr if a logger with such name doesn't exist.
+// Return an existing handleClient_logger or nullptr if a handleClient_logger with such name doesn't exist.
 // example: spdlog::get("my_logger")->info("hello {}", "world");
 //
 std::shared_ptr<logger> get(const std::string& name);
@@ -48,7 +48,7 @@ void set_error_handler(log_err_handler);
 // Turn on async mode (off by default) and set the queue size for each async_logger.
 // effective only for loggers created after this call.
 // queue_size: size of queue (must be power of 2):
-//    Each logger will pre-allocate a dedicated queue with queue_size entries upon construction.
+//    Each handleClient_logger will pre-allocate a dedicated queue with queue_size entries upon construction.
 //
 // async_overflow_policy (optional, block_retry by default):
 //    async_overflow_policy::block_retry - if queue is full, block until queue has room for the new log entry.
@@ -58,7 +58,7 @@ void set_error_handler(log_err_handler);
 //     callback function that will be called in worker thread upon start (can be used to init stuff like thread affinity)
 //
 // worker_teardown_cb (optional):
-//     callback function that will be called in worker thread upon exit
+//     callback function that will be called in worker thread upon exitFailure
 //
 void set_async_mode(size_t queue_size, const async_overflow_policy overflow_policy = async_overflow_policy::block_retry, const std::function<void()>& worker_warmup_cb = nullptr, const std::chrono::milliseconds& flush_interval_ms = std::chrono::milliseconds::zero(), const std::function<void()>& worker_teardown_cb = nullptr);
 
@@ -67,20 +67,20 @@ void set_sync_mode();
 
 
 //
-// Create and register multi/single threaded basic file logger.
-// Basic logger simply writes to given file without any limitatons or rotations.
+// Create and register multi/single threaded basic file handleClient_logger.
+// Basic handleClient_logger simply writes to given file without any limitatons or rotations.
 //
 std::shared_ptr<logger> basic_logger_mt(const std::string& logger_name, const filename_t& filename, bool truncate = false);
 std::shared_ptr<logger> basic_logger_st(const std::string& logger_name, const filename_t& filename, bool truncate = false);
 
 //
-// Create and register multi/single threaded rotating file logger
+// Create and register multi/single threaded rotating file handleClient_logger
 //
 std::shared_ptr<logger> rotating_logger_mt(const std::string& logger_name, const filename_t& filename, size_t max_file_size, size_t max_files);
 std::shared_ptr<logger> rotating_logger_st(const std::string& logger_name, const filename_t& filename, size_t max_file_size, size_t max_files);
 
 //
-// Create file logger which creates new file on the given time (default in  midnight):
+// Create file handleClient_logger which creates new file on the given time (default in  midnight):
 //
 std::shared_ptr<logger> daily_logger_mt(const std::string& logger_name, const filename_t& filename, int hour=0, int minute=0);
 std::shared_ptr<logger> daily_logger_st(const std::string& logger_name, const filename_t& filename, int hour=0, int minute=0);
@@ -102,41 +102,41 @@ std::shared_ptr<logger> stderr_color_st(const std::string& logger_name);
 
 
 //
-// Create and register a syslog logger
+// Create and register a syslog handleClient_logger
 //
 #ifdef SPDLOG_ENABLE_SYSLOG
-std::shared_ptr<logger> syslog_logger(const std::string& logger_name, const std::string& ident = "", int syslog_option = 0);
+std::shared_ptr<handleClient_logger> syslog_logger(const std::string& logger_name, const std::string& ident = "", int syslog_option = 0);
 #endif
 
 #if defined(__ANDROID__)
-std::shared_ptr<logger> android_logger(const std::string& logger_name, const std::string& tag = "spdlog");
+std::shared_ptr<handleClient_logger> android_logger(const std::string& logger_name, const std::string& tag = "spdlog");
 #endif
 
-// Create and register a logger a single sink
+// Create and register a handleClient_logger a single sink
 std::shared_ptr<logger> create(const std::string& logger_name, const sink_ptr& sink);
 
-// Create and register a logger with multiple sinks
+// Create and register a handleClient_logger with multiple sinks
 std::shared_ptr<logger> create(const std::string& logger_name, sinks_init_list sinks);
 template<class It>
 std::shared_ptr<logger> create(const std::string& logger_name, const It& sinks_begin, const It& sinks_end);
 
 
-// Create and register a logger with templated sink type
+// Create and register a handleClient_logger with templated sink type
 // Example:
 // spdlog::create<daily_file_sink_st>("mylog", "dailylog_filename", "txt");
 template <typename Sink, typename... Args>
 std::shared_ptr<spdlog::logger> create(const std::string& logger_name, Args...);
 
 
-// Register the given logger with the given name
+// Register the given handleClient_logger with the given name
 void register_logger(std::shared_ptr<logger> logger);
 
 // Apply a user defined function on all registered loggers
 // Example:
-// spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {l->flush();});
+// spdlog::apply_all([&](std::shared_ptr<spdlog::handleClient_logger> l) {l->flush();});
 void apply_all(std::function<void(std::shared_ptr<logger>)> fun);
 
-// Drop the reference to the given logger
+// Drop the reference to the given handleClient_logger
 void drop(const std::string &name);
 
 // Drop all references from the registry
@@ -159,13 +159,13 @@ void drop_all();
 #ifdef SPDLOG_TRACE_ON
 #define SPDLOG_STR_H(x) #x
 #define SPDLOG_STR_HELPER(x) SPDLOG_STR_H(x)
-#define SPDLOG_TRACE(logger, ...) logger->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__)
+#define SPDLOG_TRACE(handleClient_logger, ...) handleClient_logger->trace("[" __FILE__ " line #" SPDLOG_STR_HELPER(__LINE__) "] " __VA_ARGS__)
 #else
 #define SPDLOG_TRACE(logger, ...)
 #endif
 
 #ifdef SPDLOG_DEBUG_ON
-#define SPDLOG_DEBUG(logger, ...) logger->debug(__VA_ARGS__)
+#define SPDLOG_DEBUG(handleClient_logger, ...) handleClient_logger->debug(__VA_ARGS__)
 #else
 #define SPDLOG_DEBUG(logger, ...)
 #endif
@@ -174,4 +174,4 @@ void drop_all();
 }
 
 
-#include <spdlog/details/spdlog_impl.h>
+#include "details/spdlog_impl.h"

@@ -12,7 +12,7 @@
 #include <string>
 
 
-// create logger with given name, sinks and the default pattern formatter
+// create handleClient_logger with given name, sinks and the default pattern formatter
 // all other ctors will call this one
 template<class It>
 inline spdlog::logger::logger(const std::string& logger_name, const It& begin, const It& end):

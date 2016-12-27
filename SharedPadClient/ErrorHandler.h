@@ -1,6 +1,8 @@
 #ifndef SHAREPADSERVER_ERRORHANDLER_H
 #define SHAREPADSERVER_ERRORHANDLER_H
 
+#include <cstdio>
+#include <cstdlib>
 
 class ErrorHandler {
 

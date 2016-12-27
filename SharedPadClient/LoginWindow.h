@@ -9,15 +9,16 @@
 #include <QPushButton>
 #include <QMessageBox>
 
-#include "ErrorHandler.h"
+#include <string.h>
+#include <stdio.h>
+
+#include "spdlog/spdlog.h"
+
 #include "GenericResponseMessage.h"
 #include "JsonRequestMessageGenerator.h"
 #include "NamespaceSPP.h"
 #include "Client.h"
-#include "spdlog/spdlog.h"
 
-#include <string.h>
-#include <stdio.h>
 
 class LoginWindow : public QDialog
 {

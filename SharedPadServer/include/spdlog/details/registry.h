@@ -5,9 +5,9 @@
 
 #pragma once
 
-// Loggers registy of unique name->logger pointer
-// An attempt to create a logger with an already existing name will be ignored
-// If user requests a non existing logger, nullptr will be returned
+// Loggers registy of unique name->handleClient_logger pointer
+// An attempt to create a handleClient_logger with an already existing name will be ignored
+// If user requests a non existing handleClient_logger, nullptr will be returned
 // This class is thread safe
 
 #include <spdlog/details/null_mutex.h>
@@ -162,7 +162,7 @@ private:
     void throw_if_exists(const std::string &logger_name)
     {
         if (_loggers.find(logger_name) != _loggers.end())
-            throw spdlog_ex("logger with name '" + logger_name + "' already exists");
+            throw spdlog_ex("handleClient_logger with name '" + logger_name + "' already exists");
     }
     Mutex _mutex;
     std::unordered_map <std::string, std::shared_ptr<logger>> _loggers;

@@ -2,14 +2,25 @@
 #define CLIENT_H
 
 #include <string.h>
-#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <cstdio>
 #include <stdio.h>
+#include <arpa/inet.h>
 #include <pthread.h>
-#include <unistd.h>
 
+#include "rapidjson/document.h"
+#include "spdlog/spdlog.h"
+
+#include "JsonResponseMessageParser.h"
+#include "JsonRequestMessageGenerator.h"
 #include "GenericRequestMessage.h"
 #include "GenericResponseMessage.h"
+#include "NamespaceSPP.h"
+#include "ErrorHandler.h"
+
+namespace spd = spdlog;
+using namespace rapidjson;
 
 class Client
 {

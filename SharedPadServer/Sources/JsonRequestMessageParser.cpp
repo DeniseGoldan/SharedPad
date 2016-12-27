@@ -1,50 +1,52 @@
 #include "../Headers/JsonRequestMessageParser.h"
-#include "../include/rapidjson/document.h"
-#include "../Headers/NamespaceSPP.h"
-#include "../Headers/ErrorHandler.h"
 
-JsonRequestMessageParser::JsonRequestMessageParser() {
-}
+auto parseJsonMessage_logger = spdlog::stdout_color_mt("parseJsonMessage_logger");
 
-rapidjson::Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage) {
-    using namespace rapidjson;
-    Document document;
+JsonRequestMessageParser::JsonRequestMessageParser() {}
+
+Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage) {
+    //This variable will exist only inside this scope, in the stack.
+    Document stackDocument;
 
     // Parse jsonMessage (string) into DOM
-    if (document.Parse(jsonMessage).HasParseError()) {
-        ErrorHandler::handleErrorWithoutExit("Parsing the json request into a document resulted in a error.\n");
+    if (stackDocument.Parse(jsonMessage).HasParseError()) {
+        parseJsonMessage_logger->warn("Parsing the json request into a stackDocument resulted in a error.");
         return nullptr;
     }
 
-    // Ckeck structure of jsonMessage sent by client. Must contain COMMAND and ARGUMENTS
-    if (!document.HasMember(COMMAND)
-        || !document.HasMember(ARGUMENTS)) {
-        ErrorHandler::handleErrorWithoutExit("The document has the COMMAND member or ARGUMENTS missing.\n");
+    // Check structure of jsonMessage sent by client. Must contain COMMAND and ARGUMENTS
+    if (!stackDocument.HasMember(COMMAND) || !stackDocument.HasMember(ARGUMENTS)) {
+        parseJsonMessage_logger->warn("The stackDocument has the COMMAND or ARGUMENTS missing.");
         return nullptr;
     }
 
-    if (document[COMMAND].IsNull()) {
-        ErrorHandler::handleErrorWithoutExit("The document has the COMMAND member equal to null.\n");
+    if (stackDocument[COMMAND].IsNull()) {
+        parseJsonMessage_logger->warn("The stackDocument has the COMMAND member equal to null.");
         return nullptr;
     }
 
-    if (!document.IsObject() || !document[COMMAND].IsString() || !document[ARGUMENTS].IsObject()) {
-        ErrorHandler::handleErrorWithoutExit("The document has got a mismatch between the expected type and the actual type of the blocks.\n");
+    if (!stackDocument.IsObject() || !stackDocument[COMMAND].IsString() || !stackDocument[ARGUMENTS].IsObject()) {
+        parseJsonMessage_logger->warn("The stackDocument has got a mismatch between the expected type and the actual type of the blocks.");
         return nullptr;
     }
 
-    if (!JsonRequestMessageParser::argumentsCorrespondToCommand(document[COMMAND].GetString(), document)) {
-        ErrorHandler::handleErrorWithoutExit("The provided arguments do not correspond to the COMMAND.\n");
+    if (!JsonRequestMessageParser::argumentsCorrespondToCommand(stackDocument[COMMAND].GetString(), stackDocument)) {
+        parseJsonMessage_logger->warn("The provided arguments do not correspond to the COMMAND.");
         return nullptr;
     }
 
-    Document *newDocument = new Document();
-    // The value from source(document) is moved, not copied, to destination (newDocument)
-    newDocument->CopyFrom(document, newDocument->GetAllocator());
-    return newDocument;
+    /*
+     * Create a variable inside the heap, not the stack.
+     * The value from source(stackDocument) is moved, not copied, to destination (heapDocument).
+     */
+    Document *heapDocument = new Document();
+    heapDocument->CopyFrom(stackDocument, heapDocument->GetAllocator());
+    return heapDocument;
 }
 
-bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command, const rapidjson::Document &document) {
+bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command, const Document &document) {
+
+    // LOGIN
     if (command == LOGIN){
         if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString()){
             return false;

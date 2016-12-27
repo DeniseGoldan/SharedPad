@@ -20,6 +20,7 @@
       <sourceFolder url="file://$MODULE_DIR$/Sources/ClientInformation.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/JsonResponseMessageGenerator.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/User.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/logs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/include" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
     </content>

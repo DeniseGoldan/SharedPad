@@ -23,10 +23,18 @@ const char *const LOGIN_FAILED = "login_not_approved";
 const int LOGIN_APPROVED_CODE = 11;
 const int LOGIN_FAILED_CODE = 91;
 
+const char *const CONNECTION_FAILED = "connection_failed";
+const int CONNECTION_FAILED_CODE = 81;
 
-const int THREAD_CREATION_FAILURE_CODE = 21;
-const char *const READ_FAILURE = "read_failure";
-const int READ_FAILURE_CODE = 31;
+const int THREAD_CREATION_FAILED_CODE = 21;
 
+const char *const READ_FAILED = "reading_failed";
+const int READ_FAILED_CODE = 31;
+
+const char *const WRITE_FAILED = "writing_failed";
+const int WRITE_FAILED_CODE = 101;
+
+const char *const JSON_PARSING_FAILED = "json_parsing_failed";
+const int JSON_PARSING_FAILED_CODE = 401;
 
 #endif //SHAREPADSERVER_NAMESPACESPP_H

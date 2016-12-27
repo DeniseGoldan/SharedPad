@@ -1,8 +1,7 @@
-#include <string>
-
 #ifndef GENERICRESPONSEMESSAGE_H
 #define GENERICRESPONSEMESSAGE_H
 
+#include <string>
 
 class GenericResponseMessage {
 public:

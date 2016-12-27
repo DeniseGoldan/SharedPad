@@ -1,8 +1,7 @@
-#include <string>
-
 #ifndef SHAREPADSERVER_GENERICMESSAGE_H
 #define SHAREPADSERVER_GENERICMESSAGE_H
 
+#include <string>
 
 class GenericResponseMessage {
 public:

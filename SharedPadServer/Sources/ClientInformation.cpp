@@ -1,4 +1,3 @@
-#include <string.h>
 #include "../Headers/ClientInformation.h"
 
 ClientInformation::ClientInformation()

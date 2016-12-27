@@ -532,7 +532,7 @@ private:
 
     void ClearStack() { stack_.Clear(); }
 
-    // clear stack on any exit from ParseStream, e.g. due to exception
+    // clear stack on any exitFailure from ParseStream, e.g. due to exception
     struct ClearStackOnExit {
         explicit ClearStackOnExit(GenericReader& r) : r_(r) {}
         ~ClearStackOnExit() { r_.ClearStack(); }

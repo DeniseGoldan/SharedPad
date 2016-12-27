@@ -1,10 +1,5 @@
-//
-// Created by denice on 10.12.2016.
-//
-
 #ifndef SHAREPADSERVER_USER_H
 #define SHAREPADSERVER_USER_H
-
 
 #include <netinet/in.h>
 
@@ -25,6 +20,5 @@ private:
 
 
 };
-
 
 #endif //SHAREPADSERVER_USER_H

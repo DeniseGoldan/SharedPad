@@ -2,6 +2,7 @@
 #define SHAREPADSERVER_CLIENT_H
 
 #include <netinet/in.h>
+#include <string.h>
 
 class ClientInformation {
 public:
@@ -10,8 +11,6 @@ public:
     sockaddr_in address;
     socklen_t addressLength;
     int clientSocketFD;
-
 };
-
 
 #endif //SHAREPADSERVER_CLIENT_H

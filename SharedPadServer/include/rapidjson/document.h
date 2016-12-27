@@ -2364,7 +2364,7 @@ public:
     size_t GetStackCapacity() const { return stack_.GetCapacity(); }
 
 private:
-    // clear stack on any exit from ParseStream, e.g. due to exception
+    // clear stack on any exitFailure from ParseStream, e.g. due to exception
     struct ClearStackOnExit {
         explicit ClearStackOnExit(GenericDocument& d) : d_(d) {}
         ~ClearStackOnExit() { d_.ClearStack(); }

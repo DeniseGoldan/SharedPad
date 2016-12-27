@@ -5,18 +5,18 @@
 
 #pragma once
 
-// Very fast asynchronous logger (millions of logs per second on an average desktop)
+// Very fast asynchronous handleClient_logger (millions of logs per second on an average desktop)
 // Uses pre allocated lockfree queue for maximum throughput even under large number of threads.
 // Creates a single back thread to pop messages from the queue and log them.
 //
-// Upon each log write the logger:
+// Upon each log write the handleClient_logger:
 //    1. Checks if its log level is enough to log the message
 //    2. Push a new copy of the message to a queue (or block the caller until space is available in the queue)
 //    3. will throw spdlog_ex upon log exceptions
 // Upon destruction, logs all remaining messages in the queue before destructing..
 
-#include <spdlog/common.h>
-#include <spdlog/logger.h>
+#include "common.h"
+#include "logger.h"
 
 #include <chrono>
 #include <functional>
@@ -74,4 +74,4 @@ private:
 }
 
 
-#include <spdlog/details/async_logger_impl.h>
+#include "details/async_logger_impl.h"

@@ -3,7 +3,7 @@
 LoginWindow::LoginWindow(QWidget* parent)
     : QDialog(parent)
 {
-    setFixedSize(240, 120);
+    setFixedSize(250, 125);
     setWindowTitle("Login");
     setModal(true);
     setAttribute(Qt::WA_DeleteOnClose);

@@ -3,9 +3,13 @@
 
 #include <string>
 
-#include "spdlog/spdlog.h"
 #include "rapidjson/writer.h"
+#include "spdlog/spdlog.h"
+
 #include "GenericRequestMessage.h"
+#include "NamespaceSPP.h"
+
+using namespace rapidjson;
 
 class JsonRequestMessageGenerator {
 public:

@@ -5,15 +5,15 @@
 
 #pragma once
 
-// Thread safe logger
+// Thread safe handleClient_logger
 // Has name, log level, vector of std::shared sink pointers and formatter
-// Upon each log write the logger:
+// Upon each log write the handleClient_logger:
 // 1. Checks if its log level is enough to log the message
 // 2. Format the message using the formatter function
 // 3. Pass the formatted message to its sinks to performa the actual logging
 
-#include <spdlog/sinks/base_sink.h>
-#include <spdlog/common.h>
+#include "sinks/base_sink.h"
+#include "common.h"
 
 #include <vector>
 #include <memory>
@@ -91,4 +91,4 @@ protected:
 };
 }
 
-#include <spdlog/details/logger_impl.h>
+#include "details/logger_impl.h"

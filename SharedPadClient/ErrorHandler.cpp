@@ -1,5 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
 #include "ErrorHandler.h"
 
 void ErrorHandler::handleErrorAndExitFailure(const char *errorMessage)
