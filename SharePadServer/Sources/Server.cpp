@@ -68,6 +68,8 @@ void Server::startListeningSession()
             continue;
         }
 
+        //Server::enableKeepAlive(currentClient->clientSocketFD);
+
         // Concurrency of the server comes from the usage of threads
         pthread_t threadId;
         if (0 != pthread_create(&threadId, nullptr, Server::handleClient, (void *) currentClient))
@@ -306,14 +308,12 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
         // Send a "login approved" response back to the client
         response->setCode(LOGIN_APPROVED_CODE);
         response->setCodeDescription(LOGIN_APPROVED);
-        printf("%s","Login approved.\n");
     }
     else
     {
         // Username is already registered, send a "login failed" response back to the client
         response->setCode(LOGIN_FAILED_CODE);
         response->setCodeDescription(LOGIN_FAILED);
-        printf("%s","Login NOT approved. Username is already logged in.\n");
     }
 
     return response;
@@ -330,4 +330,31 @@ bool Server::stringContainsOnlyDigits(char *string)
         }
     }
     return true;
+}
+
+void Server::enableKeepAlive(int socketDescriptor)
+{
+    int yes = 1;
+    if (-1 == setsockopt(socketDescriptor, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)))
+    {
+        ErrorHandler::exitFailure("Setting socket option (SO_KEEPALIVE) failed.\n");
+    }
+
+    int idle = 1;
+    if (-1 == setsockopt(socketDescriptor, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle)))
+    {
+        ErrorHandler::exitFailure("Setting socket option (SO_KEEPIDLE) failed.\n");
+    }
+
+    int interval = 1;
+    if (-1 == setsockopt(socketDescriptor, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval)))
+    {
+        ErrorHandler::exitFailure("Setting socket option (TCP_KEEPINTVL) failed.\n");
+    }
+
+    int maxNumberOfPackets = 10;
+    if (-1 == setsockopt(socketDescriptor, IPPROTO_TCP, TCP_KEEPCNT, &maxNumberOfPackets, sizeof(maxNumberOfPackets)))
+    {
+        ErrorHandler::exitFailure("Setting socket option (TCP_KEEPCNT) failed.\n");
+    }
 }

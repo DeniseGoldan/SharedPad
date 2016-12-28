@@ -13,18 +13,18 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
     ErrorHandler.cpp \
     GenericRequestMessage.cpp \
     GenericResponseMessage.cpp \
     JsonResponseMessageParser.cpp \
     JsonRequestMessageGenerator.cpp \
     Client.cpp \
-    LoginWindow.cpp \
     spdlog/fmt/bundled/format.cc \
-    spdlog/fmt/bundled/ostream.cc
+    spdlog/fmt/bundled/ostream.cc \
+    MainWindow.cpp \
+    NotepadWindow.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS  += \
     rapidjson/error/en.h \
     rapidjson/error/error.h \
     rapidjson/internal/biginteger.h \
@@ -61,7 +61,6 @@ HEADERS  += mainwindow.h \
     JsonResponseMessageParser.h \
     JsonRequestMessageGenerator.h \
     Client.h \
-    LoginWindow.h \
     rapidjson/internal/regex.h \
     rapidjson/fwd.h \
     rapidjson/istreamwrapper.h \
@@ -101,6 +100,10 @@ HEADERS  += mainwindow.h \
     spdlog/formatter.h \
     spdlog/logger.h \
     spdlog/spdlog.h \
-    spdlog/tweakme.h
+    spdlog/tweakme.h \
+    MainWindow.h \
+    NotepadWindow.h
 
-FORMS    += mainwindow.ui
+FORMS    += \
+    NotepadWindow.ui \
+    MainWindow.ui

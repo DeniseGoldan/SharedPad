@@ -1,14 +1,18 @@
 #ifndef SHAREPADSERVER_SERVER_H
 #define SHAREPADSERVER_SERVER_H
 
+#include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/signal.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include <cstdio>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <string>
 #include <map>
 
 #include "../include/rapidjson/document.h"
@@ -54,6 +58,8 @@ private:
     static GenericResponseMessage *executeLoginRequest(ClientInformation *clientInformation, Document *document);
 
     static bool stringContainsOnlyDigits(char *string);
+
+    static void enableKeepAlive(int socketDescriptor);
 };
 
 
