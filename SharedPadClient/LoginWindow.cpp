@@ -1,9 +1,9 @@
-#include "MainWindow.h"
-#include "ui_MainWindow.h"
+#include "LoginWindow.h"
+#include "ui_LoginWindow.h"
 
-MainWindow::MainWindow(QWidget *parent) :
+LoginWindow::LoginWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::LoginWindow)
 {
     ui->setupUi(this);
 
@@ -11,12 +11,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 }
 
-MainWindow::~MainWindow()
+LoginWindow::~LoginWindow()
 {
     delete ui;
 }
 
-void MainWindow::OnLoginButtonPressed()
+void LoginWindow::OnLoginButtonPressed()
 {
     QString username =  ui->usernameLineEdit->text();
     // Checking if "Username" field is empty
@@ -39,7 +39,11 @@ void MainWindow::OnLoginButtonPressed()
         {
             QMessageBox::information(this,"Login approved!","The username you provided has now been registered.");
             notepadWindow = new NotepadWindow(this);
+            notepadWindow->belongsTo(username);
             notepadWindow->show();
+            //ConnectionTest *updateChecker = new ConnectionTest();
+            //updateChecker->setUsername(username);
+            //updateChecker->sendUpdates();
             break;
         }
         }

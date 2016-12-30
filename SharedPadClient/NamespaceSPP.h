@@ -23,6 +23,19 @@ const char *const LOGIN_FAILED = "login_not_approved";
 const int LOGIN_APPROVED_CODE = 11;
 const int LOGIN_FAILED_CODE = 91;
 
+const char *const LOGOUT = "logout";
+const char *const LOGOUT_APPROVED = "logout_approved";
+const char *const LOGOUT_FAILED = "logout_not_approved";
+const int LOGOUT_APPROVED_CODE = 121;
+const int LOGOUT_FAILED_CODE = 921;
+
+const char *const UPDATE_CONN_TEST = "update_conn_test";
+const char *const UPDATE_CONN_TEST_APPROVED = "update_conn_test_approved";
+const int UPDATE_CONN_TEST_APPROVED_CODE = 911;
+
+const char *const USER_NOT_LOGGED_IN = "user_not_logged_in";
+const int USER_NOT_LOGGED_IN_CODE = 333;
+
 const char *const CONNECTION_FAILED = "connection_failed";
 const int CONNECTION_FAILED_CODE = 81;
 

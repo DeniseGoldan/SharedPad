@@ -2,7 +2,8 @@
 
 JsonRequestMessageGenerator::JsonRequestMessageGenerator(){}
 
-std::string JsonRequestMessageGenerator::getJsonLoginRequestMessage(const GenericRequestMessage &message){
+// Used for LOGIN, LOGOUT or UPDATE_CONN_TEST
+std::string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericRequestMessage &message){
 
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);

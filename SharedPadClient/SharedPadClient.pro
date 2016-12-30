@@ -21,8 +21,10 @@ SOURCES += main.cpp\
     Client.cpp \
     spdlog/fmt/bundled/format.cc \
     spdlog/fmt/bundled/ostream.cc \
-    MainWindow.cpp \
-    NotepadWindow.cpp
+    LoginWindow.cpp \
+    NotepadWindow.cpp \
+    TextFileEditor.cpp \
+    ConnectionTest.cpp
 
 HEADERS  += \
     rapidjson/error/en.h \
@@ -101,9 +103,14 @@ HEADERS  += \
     spdlog/logger.h \
     spdlog/spdlog.h \
     spdlog/tweakme.h \
-    MainWindow.h \
-    NotepadWindow.h
+    LoginWindow.h \
+    NotepadWindow.h \
+    TextFileEditor.h \
+    ConnectionTest.h
 
 FORMS    += \
-    NotepadWindow.ui \
-    MainWindow.ui
+    LoginWindow.ui \
+    NotepadWindow.ui
+
+QMAKE_CXXFLAGS += -std=c++0x -pthread
+LIBS += -pthread

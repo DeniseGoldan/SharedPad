@@ -3,6 +3,8 @@
 
 #include <string>
 
+using namespace std;
+
 class GenericRequestMessage
 {
 public:
@@ -10,19 +12,19 @@ public:
 
     ~GenericRequestMessage();
 
-    void setUsername(const std::string &username);
+    void setUsername(const string &username);
 
-    void setCommand(const std::string &command);
+    void setCommand(const string &command);
 
-    const std::string &getUsername() const;
+    const string &getUsername() const;
 
-    const std::string &getCommand() const;
+    const string &getCommand() const;
 
 private:
 
-    std::string username;
+    string username;
 
-    std::string command;
+    string command;
 
 };
 

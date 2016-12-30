@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>LoginWindow</class>
+ <widget class="QMainWindow" name="LoginWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>350</width>
-    <height>250</height>
+    <height>230</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Welcome!</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QGroupBox" name="groupBox">

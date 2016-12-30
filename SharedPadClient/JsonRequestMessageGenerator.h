@@ -14,7 +14,7 @@ using namespace rapidjson;
 class JsonRequestMessageGenerator {
 public:
     JsonRequestMessageGenerator();
-    static std::string getJsonLoginRequestMessage(const GenericRequestMessage &message);
+    static std::string getJsonLogRequestMessage(const GenericRequestMessage &message);
 private:
 };
 

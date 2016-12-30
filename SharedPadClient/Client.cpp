@@ -60,7 +60,7 @@ GenericResponseMessage* Client::login(std::string username){
     loginRequest.setCommand(LOGIN);
     loginRequest.setUsername(username);
 
-    std::string jsonLoginRequest = JsonRequestMessageGenerator::getJsonLoginRequestMessage(loginRequest);
+    std::string jsonLoginRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(loginRequest);
     GenericResponseMessage* responseFromServer = Client::sendRequestToServer(jsonLoginRequest);
     return responseFromServer;
 }
