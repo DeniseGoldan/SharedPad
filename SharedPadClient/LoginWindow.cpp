@@ -26,26 +26,26 @@ void LoginWindow::OnLoginButtonPressed()
     }
     else
     {
-        Client * client = new Client();
-        GenericResponseMessage * responseFromServer = client->login(username.toStdString());
+        Mediator * mediator = new Mediator();
+        GenericResponseMessage * responseFromServer = mediator->login(username.toStdString());
         switch(responseFromServer->getCode())
         {
-        case LOGIN_FAILED_CODE :
-        {
-            QMessageBox::critical(this,"Login failed!","The username you provided is already registered.");
-            break;
-        }
-        case LOGIN_APPROVED_CODE :
-        {
-            QMessageBox::information(this,"Login approved!","The username you provided has now been registered.");
-            notepadWindow = new NotepadWindow(this);
-            notepadWindow->belongsTo(username);
-            notepadWindow->show();
-            //ConnectionTest *updateChecker = new ConnectionTest();
-            //updateChecker->setUsername(username);
-            //updateChecker->sendUpdates();
-            break;
-        }
+            case LOGIN_FAILED_CODE :
+            {
+                QMessageBox::critical(this,"Login failed!","The username you provided is already registered.");
+                break;
+            }
+            case LOGIN_APPROVED_CODE :
+            {
+                QMessageBox::information(this,"Login approved!","The username you provided has now been registered.");
+                notepadWindow = new NotepadWindow(this);
+                notepadWindow->belongsTo(username);
+                notepadWindow->show();
+                QuerySender *sender = new QuerySender();
+                sender->setUsername(username);
+                sender->sendUpdates();
+                break;
+            }
         }
     }
     this->destroy();

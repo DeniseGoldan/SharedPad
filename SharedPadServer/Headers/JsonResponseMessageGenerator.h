@@ -5,7 +5,7 @@
 
 #include "../include/rapidjson/writer.h"
 
-#include "NamespaceSPP.h"
+#include "StatusCodesAndDescriptions.h"
 #include "JsonMessageContainers/GenericResponseMessage.h"
 
 using namespace rapidjson;

@@ -11,7 +11,7 @@ set(SOURCE_FILES include
         Sources/ErrorHandler.cpp Headers/ErrorHandler.h
         Sources/ClientInformation.cpp Headers/ClientInformation.h
         Sources/JsonResponseMessageGenerator.cpp Headers/JsonResponseMessageGenerator.h
-        Headers/NamespaceSPP.h
+        Headers/StatusCodesAndDescriptions.h
         Sources/JsonRequestMessageParser.cpp
         Headers/JsonRequestMessageParser.h
         Sources/JsonMessageContainers/LoginResponseMessage.cpp Headers/JsonMessageContainers/LoginResponseMessage.h

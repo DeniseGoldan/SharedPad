@@ -2,7 +2,7 @@
 
 JsonRequestMessageGenerator::JsonRequestMessageGenerator(){}
 
-// Used for LOGIN, LOGOUT or UPDATE_CONN_TEST
+// Used for LOGIN, LOGOUT or QUERY
 std::string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericRequestMessage &message){
 
     StringBuffer buffer;
@@ -11,9 +11,12 @@ std::string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericR
 
     // This object contains a COMMAND and its ARGUMENTS, organized into 2 distinct blocks
     writer.Key(COMMAND);
-    if (message.getCommand().empty()) {
+    if (message.getCommand().empty())
+    {
         writer.Null();
-    } else {
+    }
+    else
+    {
         writer.String(message.getCommand().c_str());
     }
 
@@ -21,9 +24,12 @@ std::string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericR
     writer.Key(ARGUMENTS);
     writer.StartObject();
     writer.Key(USERNAME);
-    if (message.getUsername().empty()) {
+    if (message.getUsername().empty())
+    {
         writer.Null();
-    } else {
+    }
+    else
+    {
         writer.String(message.getUsername().c_str());
     }
 

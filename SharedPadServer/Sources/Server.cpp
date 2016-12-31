@@ -13,6 +13,7 @@ auto readJsonRequestFromClient_logger = spd::stdout_color_mt("readJsonRequestFro
 auto sendResponseToClient_logger = spd::stdout_color_mt("sendResponseToClient_logger");
 auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
 auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
+auto ConnTest_logger = spd::stdout_color_mt("ConnTest_logger");
 
 
 Server::Server()
@@ -26,7 +27,7 @@ Server::Server()
     // Initializing the map containing the clients
     loggedUsers = new map<string, User>();
 
-    //handleDisconnecting(nullptr);
+    disconnectInactiveClients();
 }
 
 void Server::startListeningSession()
@@ -195,11 +196,9 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
         return nullptr;
     }
 
-    int totalBytesRead = 0;
-    int count = 0;
-    int totalBytesLeftToRead = jsonRequestLength + 1;
+    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
     char *jsonResponse = (char *) malloc(sizeof(char) * (jsonRequestLength + 2));
-    bzero(jsonResponse, jsonRequestLength + 1);
+    bzero(jsonResponse, (size_t)(jsonRequestLength + 1));
 
     while (totalBytesLeftToRead > 0)
     {
@@ -211,16 +210,26 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
 
         count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
                            (size_t) bytesToReadInCurrentSession);
-        if (-1 == count)
+        switch(count)
         {
-            close(currentClient->clientSocketFD);
-            readJsonRequestFromClient_logger->warn("Reading response from server failed.");
-            return nullptr;
+            case -1:
+            {
+                close(currentClient->clientSocketFD);
+                readJsonRequestFromClient_logger->warn("Reading response from server failed: -1 == count");
+                return nullptr;
+            }
+            case 0:
+            {
+                close(currentClient->clientSocketFD);
+                readJsonRequestFromClient_logger->warn("Reading response from server failed: 0 == count");
+                return nullptr;
+            }
+            default:
+            {
+                totalBytesRead += count;
+                totalBytesLeftToRead -= count;
+            }
         }
-        if (0 == count)
-        { break; }
-        totalBytesRead += count;
-        totalBytesLeftToRead -= count;
     }
 
     if (jsonResponse == nullptr)
@@ -255,29 +264,35 @@ bool Server::sendResponseToClient(const GenericResponseMessage &response, int cl
     while (totalBytesLeftToSend > 0)
     {
         count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
-        if (-1 == count)
+        switch(count)
         {
-            sendResponseToClient_logger->warn("Writing response to client failed: -1 == count");
-            free(prefixedJsonResponse);
-            return false;
-        } else if (0 == count)
-        {
-            sendResponseToClient_logger->warn("Writing response to client failed: 0 == count");
-            free(prefixedJsonResponse);
-            return false;
+            case -1:
+            {
+                sendResponseToClient_logger->warn("Writing response to client failed: -1 == count");
+                free(prefixedJsonResponse);
+                return false;
+            }
+            case 0:
+            {
+                sendResponseToClient_logger->warn("Writing response to client failed: 0 == count");
+                free(prefixedJsonResponse);
+                return false;
+            }
+            default:
+            {
+                totalBytesSent += count;
+                totalBytesLeftToSend -= count;
+            }
         }
-        totalBytesSent += count;
-        totalBytesLeftToSend -= count;
     }
 
     sendResponseToClient_logger->info("End of sendResponseToClient function.");
     free(prefixedJsonResponse);
     return true;
-    //http://codereview.stackexchange.com/questions/27213/sending-large-data-package-with-tcp-winsock
-    //http://stackoverflow.com/questions/1577825/unix-sockets-how-to-send-really-big-data-with-one-send-call
 }
 
-GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient, Document *document)
+GenericResponseMessage *
+Server::executeRequest(ClientInformation *currentClient, Document *document)
 {
     //This basic response will change if the request will be properly executed
     GenericResponseMessage *response = new GenericResponseMessage();
@@ -308,15 +323,16 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
     }
 
     // UPDATE_CHECK
-    if (0 == strcmp(UPDATE_CONN_TEST, document->FindMember(COMMAND)->value.GetString()))
+    if (0 == strcmp(QUERY, document->FindMember(COMMAND)->value.GetString()))
     {
-        response = executeUpdateConnectionLivenessTestRequest(currentClient, document);
+        response = executeQuery(currentClient, document);
     }
 
     return response;
 }
 
-GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *
+Server::executeLoginRequest(ClientInformation *clientInformation, rapidjson::Document *document)
 {
     GenericResponseMessage *response = new GenericResponseMessage();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -330,7 +346,8 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
         // Send a "login approved" response back to the client
         response->setCode(LOGIN_APPROVED_CODE);
         response->setCodeDescription(LOGIN_APPROVED);
-    } else
+    }
+    else
     {
         // Username is already registered, send a "login failed" response back to the client
         response->setCode(LOGIN_FAILED_CODE);
@@ -353,8 +370,8 @@ Server::executeLogoutRequest(ClientInformation *clientInformation, rapidjson::Do
     return response;
 }
 
-GenericResponseMessage *Server::executeUpdateConnectionLivenessTestRequest(ClientInformation *clientInformation,
-                                                                           rapidjson::Document *document)
+GenericResponseMessage *
+Server::executeQuery(ClientInformation *clientInformation, rapidjson::Document *document)
 {
     // TODO: Make the client send its own time?
     GenericResponseMessage *response = new GenericResponseMessage();
@@ -366,15 +383,19 @@ GenericResponseMessage *Server::executeUpdateConnectionLivenessTestRequest(Clien
         // Username is not registered
         response->setCode(USER_NOT_LOGGED_IN_CODE);
         response->setCodeDescription(USER_NOT_LOGGED_IN);
-    } else
+    }
+    else
     {
         // Username was found in the list
         timeval now;
         gettimeofday(&now, NULL);
         loggedUsers->at(username).updateCheck(now);
 
-        response->setCode(UPDATE_CONN_TEST_APPROVED_CODE);
-        response->setCodeDescription(UPDATE_CONN_TEST_APPROVED);
+        ConnTest_logger->warn("update");
+        ConnTest_logger->warn(username);
+
+        response->setCode(QUERY_APPROVED_CODE);
+        response->setCodeDescription(QUERY_APPROVED);
     }
 
     return response;
@@ -449,7 +470,4 @@ void *Server::handleDisconnecting(void *)
         handleDisconnecting_logger->info("Server will sleep for 10 seconds.");
         sleep(10);
     }
-    handleDisconnecting_logger->info("Server finished. No clients left.");
-    pthread_detach(pthread_self());
-    pthread_exit(nullptr);
 }

@@ -18,13 +18,13 @@ SOURCES += main.cpp\
     GenericResponseMessage.cpp \
     JsonResponseMessageParser.cpp \
     JsonRequestMessageGenerator.cpp \
-    Client.cpp \
     spdlog/fmt/bundled/format.cc \
     spdlog/fmt/bundled/ostream.cc \
     LoginWindow.cpp \
     NotepadWindow.cpp \
     TextFileEditor.cpp \
-    ConnectionTest.cpp
+    QuerySender.cpp \
+    Mediator.cpp
 
 HEADERS  += \
     rapidjson/error/en.h \
@@ -56,13 +56,11 @@ HEADERS  += \
     rapidjson/reader.h \
     rapidjson/stringbuffer.h \
     rapidjson/writer.h \
-    NamespaceSPP.h \
     ErrorHandler.h \
     GenericRequestMessage.h \
     GenericResponseMessage.h \
     JsonResponseMessageParser.h \
     JsonRequestMessageGenerator.h \
-    Client.h \
     rapidjson/internal/regex.h \
     rapidjson/fwd.h \
     rapidjson/istreamwrapper.h \
@@ -106,7 +104,9 @@ HEADERS  += \
     LoginWindow.h \
     NotepadWindow.h \
     TextFileEditor.h \
-    ConnectionTest.h
+    StatusCodesAndDescriptions.h \
+    QuerySender.h \
+    Mediator.h
 
 FORMS    += \
     LoginWindow.ui \

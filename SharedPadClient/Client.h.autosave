@@ -16,7 +16,7 @@
 #include "JsonRequestMessageGenerator.h"
 #include "GenericRequestMessage.h"
 #include "GenericResponseMessage.h"
-#include "NamespaceSPP.h"
+#include "StatusCodesAndDescriptions.h"
 #include "ErrorHandler.h"
 
 namespace spd = spdlog;

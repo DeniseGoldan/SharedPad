@@ -1,15 +1,15 @@
-#include "Client.h"
+#include "Mediator.h"
 
-const char *Client::ip = "127.0.0.1";
-const in_port_t Client::port = 2024;
-sockaddr_in Client::serverConfiguration;
+const char *Mediator::ip = "127.0.0.1";
+const in_port_t Mediator::port = 2024;
+sockaddr_in Mediator::serverConfiguration;
 
 auto sendRequestToServer_logger = spd::stdout_color_mt("sendRequestToServer_logger");
 auto establishConnection_logger = spd::stdout_color_mt("establishConnection_logger");
 auto readJsonResponseLengthFromServer_logger = spd::stdout_color_mt("readJsonResponseLengthFromServer_logger");
 auto readJsonResponseFromServer_logger = spd::stdout_color_mt("readJsonResponseFromServer_logger");
 
-Client::Client()
+Mediator::Mediator()
 {
     // Preparing the data structure user by the server
     bzero(&serverConfiguration, sizeof(sockaddr_in));
@@ -19,7 +19,7 @@ Client::Client()
 
 }
 
-int Client::establishConnection()
+int Mediator::establishConnection()
 {
     int socketFD = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -54,22 +54,22 @@ int Client::establishConnection()
     return socketFD;
 }
 
-GenericResponseMessage* Client::login(std::string username){
+GenericResponseMessage*
+Mediator::login(std::string username){
 
     GenericRequestMessage loginRequest;
     loginRequest.setCommand(LOGIN);
     loginRequest.setUsername(username);
 
     std::string jsonLoginRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(loginRequest);
-    GenericResponseMessage* responseFromServer = Client::sendRequestToServer(jsonLoginRequest);
+    GenericResponseMessage* responseFromServer = Mediator::sendRequestToServer(jsonLoginRequest);
     return responseFromServer;
 }
 
-int Client::readJsonResponseLengthFromServer(int socketFD)
+int Mediator::readJsonResponseLengthFromServer(int socketFD)
 {
     char currentCharacter[2]; // The string must end in '\0'
-    int totalBytesRead = 0;
-    int count = 0;
+    int totalBytesRead = 0, count = 0;
     char *prefix = (char *) malloc(sizeof(char) * PREFIX_LENGTH);
     bzero(prefix, PREFIX_LENGTH);
 
@@ -99,16 +99,15 @@ int Client::readJsonResponseLengthFromServer(int socketFD)
     return atoi(prefix);
 }
 
-char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
+char *Mediator::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
 {
-    if (-1 == jsonResponseLength){
+    if (-1 == jsonResponseLength)
+    {
         readJsonResponseFromServer_logger->warn("The response length is invalid.");
         return nullptr;
     }
 
-    int totalBytesRead = 0;
-    int count = 0;
-    int totalBytesLeftToRead = jsonResponseLength + 1;
+    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonResponseLength + 1;
     char *jsonResponse = (char *) malloc(sizeof(char) * (jsonResponseLength + 2));
     bzero(jsonResponse, jsonResponseLength + 1);
 
@@ -122,15 +121,26 @@ char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
 
         count = (int) read(socketFD, jsonResponse + totalBytesRead,
                            (size_t) bytesToReadInCurrentSession);
-        if (-1 == count)
+        switch(count)
         {
-            close(socketFD);
-            readJsonResponseFromServer_logger->warn("Reading response from server failed.");
-            return nullptr;
+            case -1:
+            {
+                close(socketFD);
+                readJsonResponseFromServer_logger->warn("Reading response from server failed: -1 == count");
+                return nullptr;
+            }
+            case 0:
+            {
+                close(socketFD);
+                readJsonResponseFromServer_logger->warn("Reading response from server failed: 0 == count");
+                return nullptr;
+            }
+            default:
+            {
+                totalBytesRead += count;
+                totalBytesLeftToRead -= count;
+            }
         }
-        if (0 == count){break;}
-        totalBytesRead += count;
-        totalBytesLeftToRead -= count;
     }
 
     if (jsonResponse == nullptr)
@@ -142,15 +152,17 @@ char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
     return jsonResponse;
 }
 
-GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
+GenericResponseMessage*
+Mediator::sendRequestToServer(std::string jsonRequest){
 
     GenericResponseMessage* response = new GenericResponseMessage();
 
     sendRequestToServer_logger->info("Inside sendRequestToServer function.");
 
-    int socketFD = Client::establishConnection();
+    int socketFD = Mediator::establishConnection();
 
-    if (-1 == socketFD){
+    if (-1 == socketFD)
+    {
         close(socketFD);
         sendRequestToServer_logger->warn("Establishing connection with the server failed...");
         response->setCode(CONNECTION_FAILED_CODE);
@@ -177,24 +189,32 @@ GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
     while (totalBytesLeftToSend > 0)
     {
         count = (int) write(socketFD, prefixedJsonRequest + totalBytesSent, BUFF_SIZE);
-        if (-1 == count)
+        switch(count)
         {
-            close(socketFD);
-            free(prefixedJsonRequest);
-            sendRequestToServer_logger->warn("Writing request to server failed: -1 == count");
-            response->setCode(WRITE_FAILED_CODE);
-            response->setCodeDescription(WRITE_FAILED);
-            return response;
-        } else if (0 == count)//connection closed meanwhile
-        {
-            free(prefixedJsonRequest);
-            sendRequestToServer_logger->warn("Writing request to server failed: 0 == count");
-            response->setCode(WRITE_FAILED_CODE);
-            response->setCodeDescription(WRITE_FAILED);
-            return response;
+            case -1:
+            {
+                close(socketFD);
+                free(prefixedJsonRequest);
+                sendRequestToServer_logger->warn("Writing request to server failed: -1 == count");
+                response->setCode(WRITE_FAILED_CODE);
+                response->setCodeDescription(WRITE_FAILED);
+                return response;
+            }
+            case 0:
+            {
+                close(socketFD);
+                free(prefixedJsonRequest);
+                sendRequestToServer_logger->warn("Writing request to server failed: 0 == count");
+                response->setCode(WRITE_FAILED_CODE);
+                response->setCodeDescription(WRITE_FAILED);
+                return response;
+            }
+            default:
+            {
+                totalBytesSent += count;
+                totalBytesLeftToSend -= count;
+            }
         }
-        totalBytesSent += count;
-        totalBytesLeftToSend -= count;
     }
 
     sendRequestToServer_logger->info("Finished writing the request into the socket.");
@@ -202,10 +222,10 @@ GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
 
     // Reading server's response to the client's request
     sendRequestToServer_logger->info("jsonResponseLength:");
-    length = Client::readJsonResponseLengthFromServer(socketFD);
+    length = Mediator::readJsonResponseLengthFromServer(socketFD);
     sendRequestToServer_logger->info(length);
     sendRequestToServer_logger->info("responseFromServer:");
-    char * responseFromServer = Client::readJsonResponseFromServer(socketFD,length);
+    char * responseFromServer = Mediator::readJsonResponseFromServer(socketFD,length);
     sendRequestToServer_logger->info(responseFromServer);
 
     Document *jsonDocument = JsonResponseMessageParser::parseJsonMessage(responseFromServer);
@@ -225,20 +245,19 @@ GenericResponseMessage* Client::sendRequestToServer(std::string jsonRequest){
     response->setCode(newDocument[CODE].GetInt());
     response->setCodeDescription(newDocument[CODE_DESCRIPTION].GetString());
     close(socketFD);
-
+    free(jsonDocument);
     sendRequestToServer_logger->info("End of sendRequestToServer function...");
     return response;
 }
 
-bool Client::stringContainsOnlyDigits(char *string)
+bool Mediator::stringContainsOnlyDigits(char *string)
 {
-    int length = strlen(string);
-    for (int i = 0; i < length; i++)
+    char *end;
+    long converted = strtol(string, &end, 10);
+    if (*end)
     {
-        if (string[i] < '0' || string[i] > '9')
-        {
-            return false;
-        }
+        // Conversion failed because the input wasn't a number.
+        return false;
     }
     return true;
 }

@@ -4,7 +4,7 @@
 #include "../include/rapidjson/document.h"
 #include "../include/spdlog/spdlog.h"
 
-#include "NamespaceSPP.h"
+#include "StatusCodesAndDescriptions.h"
 
 using namespace rapidjson;
 

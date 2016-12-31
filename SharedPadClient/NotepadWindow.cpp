@@ -117,7 +117,7 @@ void NotepadWindow::logout(){
     logoutRequest.setUsername(username.toStdString());
 
     string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(logoutRequest);
-    Client::sendRequestToServer(jsonLogoutRequest);
+    Mediator::sendRequestToServer(jsonLogoutRequest);
 
     this->hide();
 }

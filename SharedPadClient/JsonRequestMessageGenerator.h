@@ -7,7 +7,7 @@
 #include "spdlog/spdlog.h"
 
 #include "GenericRequestMessage.h"
-#include "NamespaceSPP.h"
+#include "StatusCodesAndDescriptions.h"
 
 using namespace rapidjson;
 

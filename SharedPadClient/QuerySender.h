@@ -1,5 +1,5 @@
-#ifndef CONNECTIONTEST_H
-#define CONNECTIONTEST_H
+#ifndef QUERYSENDER_H
+#define QUERYSENDER_H
 
 #include<QString>
 
@@ -9,15 +9,15 @@
 #include "GenericRequestMessage.h"
 #include "GenericResponseMessage.h"
 #include "JsonRequestMessageGenerator.h"
-#include "NamespaceSPP.h"
-#include "Client.h"
+#include "StatusCodesAndDescriptions.h"
+#include "Mediator.h"
 
 using namespace std;
 
-class ConnectionTest
+class QuerySender
 {
 public:
-    ConnectionTest();
+    QuerySender();
     QString getUsername() const;
     void setUsername(QString &value);
     void sendUpdates();
@@ -28,4 +28,4 @@ private:
 
 };
 
-#endif // CONNECTIONTEST_H
+#endif // QUERYSENDER_H

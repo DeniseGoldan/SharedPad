@@ -24,7 +24,7 @@
 #include "JsonResponseMessageGenerator.h"
 #include "JsonRequestMessageParser.h"
 #include "ErrorHandler.h"
-#include "NamespaceSPP.h"
+#include "StatusCodesAndDescriptions.h"
 #include "ClientInformation.h"
 #include "User.h"
 
@@ -60,12 +60,12 @@ private:
 
     static GenericResponseMessage *executeLogoutRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeUpdateConnectionLivenessTestRequest(ClientInformation *clientInformation,
-                                                                              Document *document);
+    static GenericResponseMessage *executeQuery(ClientInformation *clientInformation,
+                                                Document *document);
 
     static void disconnectInactiveClients();
 
-    static void *handleDisconnecting(void*);
+    static void *handleDisconnecting(void *);
 
     static bool stringContainsOnlyDigits(char *string);
 

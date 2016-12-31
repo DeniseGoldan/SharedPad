@@ -12,8 +12,8 @@
 #include "TextFileEditor.h"
 #include "GenericRequestMessage.h"
 #include "JsonRequestMessageGenerator.h"
-#include "NamespaceSPP.h"
-#include "Client.h"
+#include "StatusCodesAndDescriptions.h"
+#include "Mediator.h"
 
 class QPushButton;
 class QLabel;

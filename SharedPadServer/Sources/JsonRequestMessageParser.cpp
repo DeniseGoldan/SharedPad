@@ -46,8 +46,8 @@ Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage) {
 
 bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command, const Document &document) {
 
-    // LOGIN or LOGOUT or UPDATE_CONN_TEST
-    if (command == LOGIN || command == LOGOUT || command == UPDATE_CONN_TEST){
+    // LOGIN or LOGOUT or QUERY
+    if (command == LOGIN || command == LOGOUT || command == QUERY){
         if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString()){
             return false;
         }

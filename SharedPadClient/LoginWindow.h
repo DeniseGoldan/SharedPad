@@ -4,9 +4,9 @@
 #include <QMainWindow>
 #include <QMessageBox>
 
-#include "Client.h"
+#include "Mediator.h"
 #include "NotepadWindow.h"
-#include "ConnectionTest.h"
+#include "QuerySender.h"
 
 namespace Ui {
 class LoginWindow;

@@ -5,7 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/Headers/JsonMessageContainers/GenericResponseMessage.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/JsonMessageContainers/LoginResponseMessage.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/ClientInformation.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Headers/NamespaceSPP.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Headers/StatusCodesAndDescriptions.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/JsonResponseMessageGenerator.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/Server.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/ErrorHandler.h" isTestSource="false" />
