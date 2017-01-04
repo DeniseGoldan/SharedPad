@@ -13,7 +13,7 @@
 #include "GenericRequestMessage.h"
 #include "JsonRequestMessageGenerator.h"
 #include "StatusCodesAndDescriptions.h"
-#include "Mediator.h"
+#include "Client.h"
 
 class QPushButton;
 class QLabel;
@@ -42,6 +42,7 @@ private slots:
      void openFile();
      void saveFile();
      void logout();
+     void OnPairButtonPressed();
 
 private:
     Ui::NotepadWindow *ui;

@@ -1,5 +1,5 @@
-#ifndef SHAREPADSERVER_SERVER_H
-#define SHAREPADSERVER_SERVER_H
+#ifndef SHAREDPADSERVER_SERVER_H
+#define SHAREDPADSERVER_SERVER_H
 
 #include <netinet/tcp.h>
 #include <netinet/in.h>
@@ -14,13 +14,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <string>
 #include <map>
 
 #include "../include/rapidjson/document.h"
 #include "../include/spdlog/spdlog.h"
 
 #include "Server.h"
-#include "JsonMessageContainers/GenericResponseMessage.h"
+#include "GenericResponseMessage.h"
 #include "JsonResponseMessageGenerator.h"
 #include "JsonRequestMessageParser.h"
 #include "ErrorHandler.h"
@@ -44,7 +45,8 @@ private:
     static sockaddr_in serverConfiguration;
     static const char * ip;
     static const in_port_t port;
-    static std::map<std::string, User> *loggedUsers;
+    static map<string, User> *loggedUsers;
+    static map<string, string> *pairs;
 
     static void *handleClient(void *client);
 
@@ -60,8 +62,9 @@ private:
 
     static GenericResponseMessage *executeLogoutRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeQuery(ClientInformation *clientInformation,
-                                                Document *document);
+    static GenericResponseMessage *executeQuery(ClientInformation *clientInformation, Document *document);
+
+    static GenericResponseMessage *executePairRequest(ClientInformation *clientInformation, Document *document);
 
     static void disconnectInactiveClients();
 
@@ -69,8 +72,12 @@ private:
 
     static bool stringContainsOnlyDigits(char *string);
 
-    static void enableKeepAlive(int socketDescriptor);
+    static void printLoggedUsers();
+
+    static void printPairs();
+
+    static bool usernameIsPaired(const char* username);
 };
 
 
-#endif //SHAREPADSERVER_SERVER_H
+#endif //SHAREDPADSERVER_SERVER_H

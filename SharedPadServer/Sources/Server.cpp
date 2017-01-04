@@ -3,8 +3,8 @@
 const char *Server::ip = "127.0.0.1";
 const in_port_t Server::port = 2024;
 sockaddr_in Server::serverConfiguration;
-
 map<string, User> *Server::loggedUsers;
+map<string, string> *Server::pairs;
 
 auto startListeningSession_logger = spd::stdout_color_mt("startListeningSession_logger");
 auto handleClient_logger = spd::stdout_color_mt("handleClient_logger");
@@ -13,78 +13,60 @@ auto readJsonRequestFromClient_logger = spd::stdout_color_mt("readJsonRequestFro
 auto sendResponseToClient_logger = spd::stdout_color_mt("sendResponseToClient_logger");
 auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
 auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
-auto ConnTest_logger = spd::stdout_color_mt("ConnTest_logger");
-
+auto query_logger = spd::stdout_color_mt("query_logger");
+auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
+auto forwardMessage_logger = spd::stdout_color_mt("forwardMessage_logger");
 
 Server::Server()
 {
-    // Preparing the data structure user by the server
     bzero(&serverConfiguration, sizeof(sockaddr_in));
     serverConfiguration.sin_family = AF_INET;
     inet_aton(ip, &serverConfiguration.sin_addr);
     serverConfiguration.sin_port = htons(port);
-
-    // Initializing the map containing the clients
     loggedUsers = new map<string, User>();
-
+    pairs = new map<string, string>();
     disconnectInactiveClients();
 }
 
 void Server::startListeningSession()
 {
-    // Creating a socket
     int serverSocketFD = socket(AF_INET, SOCK_STREAM, 0);
     if (-1 == serverSocketFD)
     {
         ErrorHandler::exitFailure("Socket creation failed.\n");
     }
 
-    // Setting the REUSEADDR option
     int enable = 1;
     if (-1 == setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, &enable, (socklen_t) sizeof(enable)))
     {
         ErrorHandler::exitFailure("Setting socket option (SO_REUSEADDR) failed.\n");
     }
 
-    // Attaching the socket to the server configuration initialized in the constructor
     if (-1 == bind(serverSocketFD, (const sockaddr *) &serverConfiguration, sizeof(sockaddr)))
     {
         ErrorHandler::exitFailure("Bind failed.\n");
     }
 
-    // Setting socket backlog to "SOcket MAX CONNections"
     if (-1 == listen(serverSocketFD, SOMAXCONN))
     {
         ErrorHandler::exitFailure("Listening failed.\n");
     }
 
-    // The loop where the server treats every REQUEST and sends a RESPONSE for each request
     while (1)
     {
-        // Creating a new ClientInformation instance
         ClientInformation *currentClient = new ClientInformation();
+        currentClient->clientSocketFD = accept(serverSocketFD, (sockaddr *) &currentClient->address, &currentClient->addressLength);
 
-        // Waiting for and accepting a new client
-        currentClient->clientSocketFD =
-                accept(serverSocketFD, (sockaddr *) &currentClient->address, &currentClient->addressLength);
         if (-1 == currentClient->clientSocketFD)
         {
-            startListeningSession_logger->warn("ClientInformation acceptance failed.\n");
+            startListeningSession_logger->warn("ClientInformation acceptance failed.");
             continue;
         }
 
-        //Server::enableKeepAlive(currentClient->clientSocketFD);
-
-        // Concurrency of the server comes from the usage of threads
         pthread_t threadId;
         if (0 != pthread_create(&threadId, nullptr, Server::handleClient, (void *) currentClient))
         {
-            // Send a RESPONSE to the client about the error
-            GenericResponseMessage response;
-            response.setCode(THREAD_CREATION_FAILED_CODE);
-            response.setCodeDescription("Thread creation failed.\n");
-            sendResponseToClient(response, currentClient->clientSocketFD);
-            // EXIT_FAILURE
+            startListeningSession_logger->critical("Thread creation failed.");
             ErrorHandler::exitFailure("Thread creation failed.\n");
         }
     }
@@ -107,7 +89,6 @@ void *Server::handleClient(void *client)
         handleClient_logger->warn("Setting socket option (SO_SNDTIMEO) failed.");
     }
 
-    // Read the request from the client's socket
     int jsonRequestLength = readJsonRequestLength(currentClient);
     handleClient_logger->info("jsonRequestLength");
     handleClient_logger->info(jsonRequestLength);
@@ -138,7 +119,6 @@ void *Server::handleClient(void *client)
     }
     handleClient_logger->info("Passed parsing of the request.");
 
-    // Execute request and send a response back to the client
     GenericResponseMessage *message = executeRequest(currentClient, jsonDocument);
     handleClient_logger->info("Executed request...");
     sendResponseToClient(*message, currentClient->clientSocketFD);
@@ -154,13 +134,12 @@ void *Server::handleClient(void *client)
 
 int Server::readJsonRequestLength(const ClientInformation *currentClient)
 {
-    char currentCharacter[2]; // The string must end in '\0'
-    int totalBytesRead = 0;
-    int count = 0;
     char *prefix = (char *) malloc(sizeof(char) * PREFIX_LENGTH);
     bzero(prefix, PREFIX_LENGTH);
 
-    // Read character after character until '\n' is encountered in order to obtain message length
+    char currentCharacter[2];
+    int totalBytesRead = 0, count = 0;
+
     while (totalBytesRead < PREFIX_LENGTH)
     {
         count = (int) read(currentClient->clientSocketFD, currentCharacter, 1);
@@ -171,9 +150,13 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
             return -1;
         }
         if (currentCharacter[0] == '\n')
-        { break; }
+        {
+            break;
+        }
         else
-        { currentCharacter[1] = '\0'; }
+        {
+            currentCharacter[1] = '\0';
+        }
         strcat(prefix, currentCharacter);
         totalBytesRead += count;
     }
@@ -181,7 +164,7 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
     if (!stringContainsOnlyDigits(prefix))
     {
         pthread_detach(pthread_self());
-        readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.\n");
+        readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.");
         return -1;
     }
 
@@ -244,18 +227,15 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
 bool Server::sendResponseToClient(const GenericResponseMessage &response, int clientSocketFD)
 {
     sendResponseToClient_logger->info("Inside sendResponseToClient function.");
-    // Turn the generic response into a string
     string jsonResponse = JsonResponseMessageGenerator::getJsonBasicResponseMessage(response);
 
-    // Must add a prefix with the length of the response and a delimiter ('\n')
     int length = (int) jsonResponse.length();
-    char *prefixedJsonResponse = (char *) malloc((size_t) (PREFIX_LENGTH + length + 1));
+    char *prefixedJsonResponse = (char *) malloc(sizeof(char)*(PREFIX_LENGTH + length + 1));
     bzero(prefixedJsonResponse, sizeof(prefixedJsonResponse));
     sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
     sendResponseToClient_logger->info("prefixedJsonResponse");
     sendResponseToClient_logger->info(prefixedJsonResponse);
 
-    // Write response into socket
     sendResponseToClient_logger->info("Preparing to write the response into the socket.");
     int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
     int totalBytesSent = 0;
@@ -291,10 +271,8 @@ bool Server::sendResponseToClient(const GenericResponseMessage &response, int cl
     return true;
 }
 
-GenericResponseMessage *
-Server::executeRequest(ClientInformation *currentClient, Document *document)
+GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient, Document *document)
 {
-    //This basic response will change if the request will be properly executed
     GenericResponseMessage *response = new GenericResponseMessage();
     response->setCode(UNKNOWN_CODE);
     response->setCodeDescription(UNKNOWN);
@@ -308,41 +286,41 @@ Server::executeRequest(ClientInformation *currentClient, Document *document)
         return response;
     }
 
-    //string currentCommand = document->FindMember(COMMAND)->value.GetString();
+    char * command = (char *) malloc(MAX_COMM_NAME_LEN * sizeof(char));
+    strcpy(command, document->FindMember(COMMAND)->value.GetString());
 
-    // LOGIN
-    if (0 == strcmp(LOGIN, document->FindMember(COMMAND)->value.GetString()))
+    if (0 == strcmp(LOGIN, command))
     {
         response = executeLoginRequest(currentClient, document);
     }
 
-    // LOGOUT
-    if (0 == strcmp(LOGOUT, document->FindMember(COMMAND)->value.GetString()))
+    if (0 == strcmp(LOGOUT, command))
     {
         response = executeLogoutRequest(currentClient, document);
     }
 
-    // UPDATE_CHECK
-    if (0 == strcmp(QUERY, document->FindMember(COMMAND)->value.GetString()))
+    if (0 == strcmp(QUERY, command))
     {
         response = executeQuery(currentClient, document);
     }
 
+    if (0 == strcmp(PAIR_REQUEST, command))
+    {
+        response = executePairRequest(currentClient, document);
+    }
     return response;
 }
 
-GenericResponseMessage *
-Server::executeLoginRequest(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInformation, rapidjson::Document *document)
 {
     GenericResponseMessage *response = new GenericResponseMessage();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     if (loggedUsers->find(username) == loggedUsers->cend())
     {
         // Add new user to the loggedUsers map
-        User *newUser = new User();
-        newUser->setAddress(clientInformation->address);
-        newUser->setGroup(-1);
-        loggedUsers->insert(pair<string, User>(username, *newUser));
+        User *newUserInformation = new User();
+        newUserInformation->setAddress(clientInformation->address);
+        loggedUsers->insert(pair<string, User>(username, *newUserInformation));
         // Send a "login approved" response back to the client
         response->setCode(LOGIN_APPROVED_CODE);
         response->setCodeDescription(LOGIN_APPROVED);
@@ -353,12 +331,10 @@ Server::executeLoginRequest(ClientInformation *clientInformation, rapidjson::Doc
         response->setCode(LOGIN_FAILED_CODE);
         response->setCodeDescription(LOGIN_FAILED);
     }
-
     return response;
 }
 
-GenericResponseMessage *
-Server::executeLogoutRequest(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientInformation, rapidjson::Document *document)
 {
     // Remove username from loggedUsers list
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -370,10 +346,8 @@ Server::executeLogoutRequest(ClientInformation *clientInformation, rapidjson::Do
     return response;
 }
 
-GenericResponseMessage *
-Server::executeQuery(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformation, rapidjson::Document *document)
 {
-    // TODO: Make the client send its own time?
     GenericResponseMessage *response = new GenericResponseMessage();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
 
@@ -389,16 +363,161 @@ Server::executeQuery(ClientInformation *clientInformation, rapidjson::Document *
         // Username was found in the list
         timeval now;
         gettimeofday(&now, NULL);
-        loggedUsers->at(username).updateCheck(now);
+        loggedUsers->at(username).updateLastCheck(now);
 
-        ConnTest_logger->warn("update");
-        ConnTest_logger->warn(username);
+        query_logger->warn("update");
+        query_logger->warn(username);
 
         response->setCode(QUERY_APPROVED_CODE);
         response->setCodeDescription(QUERY_APPROVED);
     }
 
     return response;
+}
+
+GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInformation, Document *document)
+{
+    pairRequest_logger->info("Inside executePairRequest function.");
+    GenericResponseMessage *response = new GenericResponseMessage();
+    string sender = document->FindMember(ARGUMENTS)->value[SENDER].GetString();
+    string receiver = document->FindMember(ARGUMENTS)->value[RECEIVER].GetString();
+
+
+    if (usernameIsPaired(sender.c_str()))
+    {
+        response->setCode(ALREADY_PAIRED_CODE);
+        response->setCodeDescription(ALREADY_PAIRED);
+        char * expected = (char*) malloc (MAX_COMM_NAME_LEN*sizeof(char));
+        for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
+        {
+            if(0 == strcmp((*constIterator).first.c_str(),sender.c_str())){
+                strcpy(expected,(*constIterator).second.c_str());
+                break;
+            }
+            if(0 == strcmp((*constIterator).second.c_str(),sender.c_str())){
+                strcpy(expected,(*constIterator).first.c_str());
+                break;
+            }
+        }
+        response->setReceiver(expected);
+        return response;
+    }
+
+
+    if (loggedUsers->find(sender) != loggedUsers->cend())// sender is logged in
+    {
+        pairRequest_logger->info("sender is logged in");
+        if (loggedUsers->find(receiver) != loggedUsers->cend())//receiver is logged in
+        {
+            pairRequest_logger->info("receiver is logged in");
+            if (0 == sender.compare(receiver))// sender is the same as receiver
+            {
+                pairRequest_logger->warn("sender is the same as receiver");
+                response->setCode(INVITED_YOURSELF_CODE);
+                response->setCodeDescription(INVITED_YOURSELF);
+            }
+            else // sender is different from receiver
+            {
+                pairRequest_logger->info("sender is different from receiver");
+                if (usernameIsPaired(sender.c_str()) || usernameIsPaired(receiver.c_str()))// already paired
+                {
+                    pairRequest_logger->warn("sender or receiver already paired");
+                    response->setCode(ALREADY_PAIRED_CODE);
+                    response->setCodeDescription(ALREADY_PAIRED);
+                    if (usernameIsPaired(sender.c_str()))
+                    {
+                        response->setCode(ALREADY_PAIRED_CODE);
+                        response->setCodeDescription(ALREADY_PAIRED);
+                        char * expected = (char*) malloc (MAX_COMM_NAME_LEN*sizeof(char));
+                        for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
+                        {
+                            if(0 == strcmp((*constIterator).first.c_str(),sender.c_str())){
+                                strcpy(expected,(*constIterator).second.c_str());
+                                break;
+                            }
+                            if(0 == strcmp((*constIterator).second.c_str(),sender.c_str())){
+                                strcpy(expected,(*constIterator).first.c_str());
+                                break;
+                            }
+                        }
+                        response->setReceiver(expected);
+                    }
+                }
+                else
+                {
+                    pairRequest_logger->info("sender and receiver have not been paired yet");
+                    if (!usernameIsPaired(sender.c_str()) && !usernameIsPaired(receiver.c_str()))//not already paired
+                    {
+                        pairRequest_logger->info("receiver accepted pair invitation");
+                        pairs->insert(pair<string, string>(sender, receiver));
+                        response->setCode(PAIR_ADDED_CODE);
+                        response->setCodeDescription(PAIR_ADDED);
+                    }
+                }
+            }
+        }
+        else//receiver not logged in
+        {
+            pairRequest_logger->info("receiver not logged in");
+            response->setCode(USER_NOT_LOGGED_IN_CODE);
+            response->setCodeDescription(USER_NOT_LOGGED_IN);
+        }
+    }
+    else// sender not logged in
+    {
+        pairRequest_logger->info("sender not logged in");
+        response->setCode(USER_NOT_LOGGED_IN_CODE);
+        response->setCodeDescription(USER_NOT_LOGGED_IN);
+    }
+    return response;
+}
+
+void Server::disconnectInactiveClients()
+{
+    pthread_t threadId;
+    if (0 != pthread_create(&threadId, nullptr, Server::handleDisconnecting, nullptr))
+    {
+        ErrorHandler::exitFailure("Thread creation failed.\n");
+    }
+}
+
+void *Server::handleDisconnecting(void *)
+{
+    handleDisconnecting_logger->info("Inside function handleDisconnecting.");
+    while (true)
+    {
+        printLoggedUsers();
+        printPairs();
+        for (auto usersIT = loggedUsers->cbegin(); usersIT != loggedUsers->cend(); usersIT++)
+        {
+            timeval now;
+            gettimeofday(&now, NULL);
+            if (now.tv_sec - usersIT->second.getLastCheck().tv_sec > 10)
+            {
+                // Delete username from logged users
+                loggedUsers->erase(usersIT);
+                //or usersIT->first
+                handleDisconnecting_logger->info("Server erased a client.");
+
+                // eliminate pair containing this username
+                for (auto pairsIt = pairs->cbegin(); pairsIt != pairs->cend(); pairsIt++)
+                {
+                    if (0 == pairsIt->first.compare(usersIT->first.c_str()))
+                    {
+                        pairs->erase(pairsIt);
+                        break;
+                    }
+                    if (0 == pairsIt->second.compare(usersIT->first.c_str()))
+                    {
+                        pairs->erase(pairsIt);
+                        break;
+                    }
+                }
+            }
+        }
+        handleDisconnecting_logger->info("Server will sleep for 10 seconds.");
+        sleep(10);
+    }
 }
 
 bool Server::stringContainsOnlyDigits(char *string)
@@ -413,61 +532,37 @@ bool Server::stringContainsOnlyDigits(char *string)
     return true;
 }
 
-void Server::enableKeepAlive(int socketDescriptor)
+void Server::printLoggedUsers()
 {
-    int yes = 1;
-    if (-1 == setsockopt(socketDescriptor, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)))
+    printf("USERS: ");
+    for (auto constIterator = loggedUsers->cbegin(); constIterator != loggedUsers->cend(); constIterator++)
     {
-        ErrorHandler::exitFailure("Setting socket option (SO_KEEPALIVE) failed.\n");
+        printf("%s | ", (*constIterator).first.c_str());
     }
-
-    int idle = 1;
-    if (-1 == setsockopt(socketDescriptor, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle)))
-    {
-        ErrorHandler::exitFailure("Setting socket option (SO_KEEPIDLE) failed.\n");
-    }
-
-    int interval = 1;
-    if (-1 == setsockopt(socketDescriptor, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(interval)))
-    {
-        ErrorHandler::exitFailure("Setting socket option (TCP_KEEPINTVL) failed.\n");
-    }
-
-    int maxNumberOfPackets = 10;
-    if (-1 == setsockopt(socketDescriptor, IPPROTO_TCP, TCP_KEEPCNT, &maxNumberOfPackets, sizeof(maxNumberOfPackets)))
-    {
-        ErrorHandler::exitFailure("Setting socket option (TCP_KEEPCNT) failed.\n");
-    }
+    printf("\n");
 }
 
-void Server::disconnectInactiveClients()
+void Server::printPairs()
 {
-    pthread_t threadId;
-    if (0 != pthread_create(&threadId, nullptr, Server::handleDisconnecting, nullptr))
+    printf("PAIRS: ");
+    for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
     {
-        //EXIT_FAILURE
-        ErrorHandler::exitFailure("Thread creation failed.\n");
+        printf("%s and %s | ", (*constIterator).first.c_str(), (*constIterator).second.c_str());
     }
+    printf("\n");
 }
 
-void *Server::handleDisconnecting(void *)
+bool Server::usernameIsPaired(const char* username)
 {
-    //TODO: mutex?
-    handleDisconnecting_logger->info("Inside function handleDisconnecting.");
-    while (true)
+    for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
     {
-        for (auto constIterator = loggedUsers->cbegin(); constIterator != loggedUsers->cend(); constIterator++)
-        {
-            timeval now;
-            gettimeofday(&now, NULL);
-            if (now.tv_sec - constIterator->second.getLastCheck().tv_sec > 10)
-            {
-                // Delete username from logged users
-                loggedUsers->erase(constIterator->first);
-                handleDisconnecting_logger->info("Server erased a client.");
-            }
+        if(0 == strcmp((*constIterator).first.c_str(),username)){
+            return true;
         }
-        handleDisconnecting_logger->info("Server will sleep for 10 seconds.");
-        sleep(10);
+        if(0 == strcmp((*constIterator).second.c_str(),username)){
+            return true;
+        }
     }
+    return false;
 }
+

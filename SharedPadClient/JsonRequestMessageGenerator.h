@@ -10,11 +10,13 @@
 #include "StatusCodesAndDescriptions.h"
 
 using namespace rapidjson;
+using namespace std;
 
 class JsonRequestMessageGenerator {
 public:
     JsonRequestMessageGenerator();
-    static std::string getJsonLogRequestMessage(const GenericRequestMessage &message);
+    static string getJsonLogRequestMessage(const GenericRequestMessage &message);
+    static string getJsonPairRequestMessage(const GenericRequestMessage &message);
 private:
 };
 

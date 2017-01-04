@@ -34,7 +34,7 @@ void *QuerySender::handleUpdating(void *argument)
 
     while(true){
         //GenericResponseMessage *response = =
-        Mediator::sendRequestToServer(jsonUpdateRequest);
+        Client::sendRequestToServer(jsonUpdateRequest);
         sleep(5);
     }
 

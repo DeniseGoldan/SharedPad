@@ -14,7 +14,6 @@ set(SOURCE_FILES include
         Headers/StatusCodesAndDescriptions.h
         Sources/JsonRequestMessageParser.cpp
         Headers/JsonRequestMessageParser.h
-        Sources/JsonMessageContainers/LoginResponseMessage.cpp Headers/JsonMessageContainers/LoginResponseMessage.h
-        Sources/JsonMessageContainers/GenericResponseMessage.cpp Headers/JsonMessageContainers/GenericResponseMessage.h Sources/User.cpp Headers/User.h)
+        Sources/GenericResponseMessage.cpp Headers/GenericResponseMessage.h Sources/User.cpp Headers/User.h)
 
 add_executable(SharePadServer ${SOURCE_FILES})

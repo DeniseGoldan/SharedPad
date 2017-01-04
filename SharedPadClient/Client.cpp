@@ -1,15 +1,15 @@
-#include "Mediator.h"
+#include "Client.h"
 
-const char *Mediator::ip = "127.0.0.1";
-const in_port_t Mediator::port = 2024;
-sockaddr_in Mediator::serverConfiguration;
+const char *Client::ip = "127.0.0.1";
+const in_port_t Client::port = 2024;
+sockaddr_in Client::serverConfiguration;
 
 auto sendRequestToServer_logger = spd::stdout_color_mt("sendRequestToServer_logger");
 auto establishConnection_logger = spd::stdout_color_mt("establishConnection_logger");
 auto readJsonResponseLengthFromServer_logger = spd::stdout_color_mt("readJsonResponseLengthFromServer_logger");
 auto readJsonResponseFromServer_logger = spd::stdout_color_mt("readJsonResponseFromServer_logger");
 
-Mediator::Mediator()
+Client::Client()
 {
     // Preparing the data structure user by the server
     bzero(&serverConfiguration, sizeof(sockaddr_in));
@@ -19,7 +19,7 @@ Mediator::Mediator()
 
 }
 
-int Mediator::establishConnection()
+int Client::establishConnection()
 {
     int socketFD = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -54,26 +54,36 @@ int Mediator::establishConnection()
     return socketFD;
 }
 
-GenericResponseMessage*
-Mediator::login(std::string username){
+GenericResponseMessage*Client::login(string username){
 
     GenericRequestMessage loginRequest;
     loginRequest.setCommand(LOGIN);
     loginRequest.setUsername(username);
 
-    std::string jsonLoginRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(loginRequest);
-    GenericResponseMessage* responseFromServer = Mediator::sendRequestToServer(jsonLoginRequest);
+    string jsonLoginRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(loginRequest);
+    GenericResponseMessage* responseFromServer = Client::sendRequestToServer(jsonLoginRequest);
     return responseFromServer;
 }
 
-int Mediator::readJsonResponseLengthFromServer(int socketFD)
+GenericResponseMessage*Client::pair(string sender, string receiver){
+
+    GenericRequestMessage pairRequest;
+    pairRequest.setCommand(PAIR_REQUEST);
+    pairRequest.setSender(sender);
+    pairRequest.setReceiver(receiver);
+
+    string jsonPairRequest = JsonRequestMessageGenerator::getJsonPairRequestMessage(pairRequest);
+    GenericResponseMessage* responseFromServer = Client::sendRequestToServer(jsonPairRequest);
+    return responseFromServer;
+}
+
+int Client::readJsonResponseLengthFromServer(int socketFD)
 {
-    char currentCharacter[2]; // The string must end in '\0'
+    char currentCharacter[2];
     int totalBytesRead = 0, count = 0;
     char *prefix = (char *) malloc(sizeof(char) * PREFIX_LENGTH);
     bzero(prefix, PREFIX_LENGTH);
 
-    // Read character after character until '\n' is encountered in order to obtain message length
     while (PREFIX_LENGTH > totalBytesRead)
     {
         count = (int) read(socketFD, &currentCharacter, 1);
@@ -99,7 +109,7 @@ int Mediator::readJsonResponseLengthFromServer(int socketFD)
     return atoi(prefix);
 }
 
-char *Mediator::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
+char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
 {
     if (-1 == jsonResponseLength)
     {
@@ -153,13 +163,13 @@ char *Mediator::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
 }
 
 GenericResponseMessage*
-Mediator::sendRequestToServer(std::string jsonRequest){
+Client::sendRequestToServer(string jsonRequest){
 
     GenericResponseMessage* response = new GenericResponseMessage();
 
     sendRequestToServer_logger->info("Inside sendRequestToServer function.");
 
-    int socketFD = Mediator::establishConnection();
+    int socketFD = Client::establishConnection();
 
     if (-1 == socketFD)
     {
@@ -222,10 +232,10 @@ Mediator::sendRequestToServer(std::string jsonRequest){
 
     // Reading server's response to the client's request
     sendRequestToServer_logger->info("jsonResponseLength:");
-    length = Mediator::readJsonResponseLengthFromServer(socketFD);
+    length = Client::readJsonResponseLengthFromServer(socketFD);
     sendRequestToServer_logger->info(length);
     sendRequestToServer_logger->info("responseFromServer:");
-    char * responseFromServer = Mediator::readJsonResponseFromServer(socketFD,length);
+    char * responseFromServer = Client::readJsonResponseFromServer(socketFD,length);
     sendRequestToServer_logger->info(responseFromServer);
 
     Document *jsonDocument = JsonResponseMessageParser::parseJsonMessage(responseFromServer);
@@ -244,16 +254,29 @@ Mediator::sendRequestToServer(std::string jsonRequest){
     newDocument.CopyFrom(*jsonDocument, newDocument.GetAllocator());
     response->setCode(newDocument[CODE].GetInt());
     response->setCodeDescription(newDocument[CODE_DESCRIPTION].GetString());
+
+    // if there is a full RECEIVER field, save the data
+
+    if (newDocument.HasMember(RECEIVER)
+            && newDocument[CODE].GetInt() == ALREADY_PAIRED_CODE
+            && !newDocument[RECEIVER].IsNull())
+    {
+        sendRequestToServer_logger->warn("____________INSIDE IF__________");
+
+
+       //response->setReceiver(newDocument[RECEIVER].GetString());
+    }
+
     close(socketFD);
     free(jsonDocument);
     sendRequestToServer_logger->info("End of sendRequestToServer function...");
     return response;
 }
 
-bool Mediator::stringContainsOnlyDigits(char *string)
+bool Client::stringContainsOnlyDigits(char *string)
 {
     char *end;
-    long converted = strtol(string, &end, 10);
+    strtol(string, &end, 10);
     if (*end)
     {
         // Conversion failed because the input wasn't a number.

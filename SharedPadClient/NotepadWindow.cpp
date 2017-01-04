@@ -1,11 +1,15 @@
 #include "NotepadWindow.h"
 #include "ui_NotepadWindow.h"
 
+auto pair_logger = spd::stdout_color_mt("pair_logger");
+
 NotepadWindow::NotepadWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::NotepadWindow)
 {
     ui->setupUi(this);
+
+    connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
 
     openAction = new QAction(tr("&Open file"), this);
     openAction->setShortcuts(QKeySequence::Open);
@@ -28,6 +32,53 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     fileMenu->addAction(logoutAction);
 
 }
+
+void NotepadWindow::OnPairButtonPressed()
+{
+    QString sender = ui->usernameTag->text();
+    QString peerUsername =  ui->peerSelectLineEdit->text();
+    pair_logger->warn(sender.toStdString());
+    pair_logger->warn(peerUsername.toStdString());
+
+    if (peerUsername.isEmpty())
+    {
+        QMessageBox::information(this, tr("Error message"), "Peer username can't be blank!");
+    }
+    else
+    {
+        Client * client = new Client();
+        GenericResponseMessage * responseFromServer = client->pair(sender.toStdString(), peerUsername.toStdString());
+        pair_logger->warn(responseFromServer->getCode());
+        pair_logger->warn(responseFromServer->getCodeDescription());
+        pair_logger->warn(responseFromServer->getSender());
+        pair_logger->warn(responseFromServer->getReceiver());
+
+        string serverResponsePeer = responseFromServer->getReceiver();
+        //pair_logger->warn(serverResponsePeer);
+
+        if (!serverResponsePeer.empty())
+        {
+            pair_logger->warn(responseFromServer->getReceiver());
+            ui->peerUsernameTag->setText(serverResponsePeer.c_str());
+        }
+
+        switch(responseFromServer->getCode())
+        {
+            case PAIR_ADDED_CODE :
+            {
+                QMessageBox::information(this,"Pair approved!","You have a pair.");
+                ui->peerUsernameTag->setText(peerUsername);
+                break;
+            }
+            default:
+            {
+                QMessageBox::information(this,"Pair not approved!","Sorry...");
+                break;
+            }
+        }
+    }
+}
+
 
 void NotepadWindow::openFile(){
 
@@ -117,7 +168,7 @@ void NotepadWindow::logout(){
     logoutRequest.setUsername(username.toStdString());
 
     string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(logoutRequest);
-    Mediator::sendRequestToServer(jsonLogoutRequest);
+    Client::sendRequestToServer(jsonLogoutRequest);
 
     this->hide();
 }

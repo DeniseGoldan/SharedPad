@@ -21,20 +21,21 @@
 
 namespace spd = spdlog;
 using namespace rapidjson;
+using namespace std;
 
 class Client
 {
 public:
     Client();
     static int establishConnection();
-    static GenericResponseMessage* login(std::string username);
-    static GenericResponseMessage * sendRequestToServer(std::string jsonRequest);
+    static GenericResponseMessage* login(string username);
+    static GenericResponseMessage* pair(string sender, string receiver);
+    static GenericResponseMessage * sendRequestToServer(string jsonRequest);
 
 private:
     static sockaddr_in serverConfiguration;
     static const char * ip;
     static const in_port_t port;
-
 
     static int readJsonResponseLengthFromServer(int socketFD);
     static char *readJsonResponseFromServer(int socketFD, int jsonRequestLength);

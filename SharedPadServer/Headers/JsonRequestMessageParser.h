@@ -1,5 +1,5 @@
-#ifndef SHAREPADSERVER_JSONMESSAGEPARSER_H
-#define SHAREPADSERVER_JSONMESSAGEPARSER_H
+#ifndef SHAREDPADSERVER_JSONMESSAGEPARSER_H
+#define SHAREDPADSERVER_JSONMESSAGEPARSER_H
 
 #include "../include/rapidjson/document.h"
 #include "../include/spdlog/spdlog.h"
@@ -18,4 +18,4 @@ private:
     static bool argumentsCorrespondToCommand(const char *command, const Document &document);
 };
 
-#endif //SHAREPADSERVER_JSONMESSAGEPARSER_H
+#endif //SHAREDPADSERVER_JSONMESSAGEPARSER_H

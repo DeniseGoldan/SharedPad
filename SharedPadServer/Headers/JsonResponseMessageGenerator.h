@@ -1,21 +1,21 @@
-#ifndef SHAREPADSERVER_CREATEJSONMESSAGE_H
-#define SHAREPADSERVER_CREATEJSONMESSAGE_H
+#ifndef SHAREDPADSERVER_CREATEJSONMESSAGE_H
+#define SHAREDPADSERVER_CREATEJSONMESSAGE_H
 
 #include <string>
 
 #include "../include/rapidjson/writer.h"
 
 #include "StatusCodesAndDescriptions.h"
-#include "JsonMessageContainers/GenericResponseMessage.h"
+#include "GenericResponseMessage.h"
 
 using namespace rapidjson;
+using namespace std;
 
 class JsonResponseMessageGenerator {
 public:
-    static std::string getJsonBasicResponseMessage(const GenericResponseMessage &response);
-
+    static string getJsonBasicResponseMessage(const GenericResponseMessage &response);
 private:
     JsonResponseMessageGenerator();
 };
 
-#endif //SHAREPADSERVER_CREATEJSONMESSAGE_H
+#endif //SHAREDPADSERVER_CREATEJSONMESSAGE_H

@@ -10,7 +10,7 @@
 #include "GenericResponseMessage.h"
 #include "JsonRequestMessageGenerator.h"
 #include "StatusCodesAndDescriptions.h"
-#include "Mediator.h"
+#include "Client.h"
 
 using namespace std;
 

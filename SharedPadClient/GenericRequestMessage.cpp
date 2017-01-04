@@ -4,24 +4,46 @@ GenericRequestMessage::GenericRequestMessage(){}
 
 GenericRequestMessage::~GenericRequestMessage(){}
 
-const std::string &GenericRequestMessage::getUsername() const
-{
-    return username;
-}
-
-const std::string &GenericRequestMessage::getCommand() const
+const string &GenericRequestMessage::getCommand() const
 {
     return command;
 }
 
-void GenericRequestMessage::setUsername(const std::string &username)
+const string &GenericRequestMessage::getUsername() const
+{
+    return username;
+}
+
+const string &GenericRequestMessage::getSender() const
+{
+    return sender;
+}
+
+const string &GenericRequestMessage::getReceiver() const
+{
+    return receiver;
+}
+
+void GenericRequestMessage::setCommand(const string &command)
+{
+    this->command = command;
+}
+
+void GenericRequestMessage::setUsername(const string &username)
 {
     this->username = username;
 }
 
-void GenericRequestMessage::setCommand(const std::string &command)
+void GenericRequestMessage::setSender(const string &sender)
 {
-    this->command = command;
+    this->sender = sender;
 }
+
+void GenericRequestMessage::setReceiver(const string &receiver)
+{
+    this->receiver = receiver;
+}
+
+
 
 

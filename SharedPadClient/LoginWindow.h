@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 
-#include "Mediator.h"
+#include "Client.h"
 #include "NotepadWindow.h"
 #include "QuerySender.h"
 

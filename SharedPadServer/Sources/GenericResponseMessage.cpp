@@ -1,4 +1,4 @@
-#include "GenericResponseMessage.h"
+#include "../Headers/GenericResponseMessage.h"
 
 GenericResponseMessage::GenericResponseMessage(){}
 

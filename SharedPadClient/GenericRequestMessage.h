@@ -12,19 +12,26 @@ public:
 
     ~GenericRequestMessage();
 
-    void setUsername(const string &username);
-
     void setCommand(const string &command);
-
-    const string &getUsername() const;
+    void setUsername(const string &username);
+    void setSender(const string &sender);
+    void setReceiver(const string &receiver);
 
     const string &getCommand() const;
+    const string &getUsername() const;
+    const string &getSender() const;
+    const string &getReceiver() const;
 
 private:
 
     string username;
 
     string command;
+
+    string sender;
+
+    string receiver;
+
 
 };
 

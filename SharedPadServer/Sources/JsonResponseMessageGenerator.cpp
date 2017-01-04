@@ -2,7 +2,7 @@
 
 JsonResponseMessageGenerator::JsonResponseMessageGenerator(){}
 
-std::string JsonResponseMessageGenerator::getJsonBasicResponseMessage(const GenericResponseMessage &response)
+string JsonResponseMessageGenerator::getJsonBasicResponseMessage(const GenericResponseMessage &response)
 {
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
@@ -10,7 +10,7 @@ std::string JsonResponseMessageGenerator::getJsonBasicResponseMessage(const Gene
     writer.StartObject();
 
     writer.Key(CODE);
-    if (response.getCode() == -1)
+    if (-1 == response.getCode())
     {
         writer.Null();
     } else
@@ -26,7 +26,28 @@ std::string JsonResponseMessageGenerator::getJsonBasicResponseMessage(const Gene
     {
         writer.String(response.getCodeDescription().c_str());
     }
-    writer.EndObject();
 
+    writer.Key(SENDER);
+    if (response.getSender().empty())
+    {
+        writer.Null();
+    }
+    else
+    {
+        writer.String(response.getSender().c_str());
+    }
+
+    writer.Key(RECEIVER);
+    if (response.getReceiver().empty())
+    {
+        writer.Null();
+    }
+    else
+    {
+        writer.String(response.getReceiver().c_str());
+    }
+
+    writer.EndObject();
     return buffer.GetString();
 }
+

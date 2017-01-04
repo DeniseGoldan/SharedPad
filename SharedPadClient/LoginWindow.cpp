@@ -19,15 +19,14 @@ LoginWindow::~LoginWindow()
 void LoginWindow::OnLoginButtonPressed()
 {
     QString username =  ui->usernameLineEdit->text();
-    // Checking if "Username" field is empty
     if (username.isEmpty())
     {
         QMessageBox::information(this, tr("Error message"), "Username can't be blank!");
     }
     else
     {
-        Mediator * mediator = new Mediator();
-        GenericResponseMessage * responseFromServer = mediator->login(username.toStdString());
+        Client * client = new Client();
+        GenericResponseMessage * responseFromServer = client->login(username.toStdString());
         switch(responseFromServer->getCode())
         {
             case LOGIN_FAILED_CODE :

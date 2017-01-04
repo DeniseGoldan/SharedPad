@@ -24,7 +24,7 @@ SOURCES += main.cpp\
     NotepadWindow.cpp \
     TextFileEditor.cpp \
     QuerySender.cpp \
-    Mediator.cpp
+    Client.cpp
 
 HEADERS  += \
     rapidjson/error/en.h \
@@ -106,7 +106,7 @@ HEADERS  += \
     TextFileEditor.h \
     StatusCodesAndDescriptions.h \
     QuerySender.h \
-    Mediator.h
+    Client.h
 
 FORMS    += \
     LoginWindow.ui \

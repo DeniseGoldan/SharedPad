@@ -1,5 +1,5 @@
-#ifndef SHAREPADSERVER_CLIENT_H
-#define SHAREPADSERVER_CLIENT_H
+#ifndef SHAREDPADSERVER_CLIENT_H
+#define SHAREDPADSERVER_CLIENT_H
 
 #include <netinet/in.h>
 #include <string.h>
@@ -13,4 +13,4 @@ public:
     int clientSocketFD;
 };
 
-#endif //SHAREPADSERVER_CLIENT_H
+#endif //SHAREDPADSERVER_CLIENT_H
