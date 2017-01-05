@@ -48,6 +48,9 @@ private:
     static map<string, User> *loggedUsers;
     static map<string, string> *pairs;
 
+    //static mutex loggedUsersMutex;
+    //static mutex pairsMutex;
+
     static void *handleClient(void *client);
 
     static int readJsonRequestLength(const ClientInformation *currentClient);

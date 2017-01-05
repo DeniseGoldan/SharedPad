@@ -6,9 +6,7 @@ LoginWindow::LoginWindow(QWidget *parent) :
     ui(new Ui::LoginWindow)
 {
     ui->setupUi(this);
-
     connect(ui->loginButton, SIGNAL(clicked()), this, SLOT(OnLoginButtonPressed()));
-
 }
 
 LoginWindow::~LoginWindow()

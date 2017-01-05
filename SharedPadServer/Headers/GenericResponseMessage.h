@@ -5,7 +5,8 @@
 
 using namespace std;
 
-class GenericResponseMessage {
+class GenericResponseMessage
+{
 public:
     GenericResponseMessage();
 
@@ -19,14 +20,6 @@ public:
 
     void setCodeDescription(const string &codeDescription);
 
-
-private:
-    int code = -1;
-
-    string codeDescription;
-
-    string sender;
-public:
     const string &getSender() const;
 
     void setSender(const string &sender);
@@ -36,6 +29,10 @@ public:
     void setReceiver(const string &receiver);
 
 private:
+
+    int code = -1;
+    string codeDescription;
+    string sender;
     string receiver;
 };
 

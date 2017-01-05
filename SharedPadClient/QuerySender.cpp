@@ -20,7 +20,6 @@ void QuerySender::sendUpdates()
 
 void *QuerySender::handleUpdating(void *argument)
 {
-    //TODO: mutex?
     char *castedArgument = (char *)argument;
     string username(castedArgument);
 
@@ -33,7 +32,7 @@ void *QuerySender::handleUpdating(void *argument)
     string jsonUpdateRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(updateRequest);
 
     while(true){
-        //GenericResponseMessage *response = =
+        //GenericResponseMessage *response =
         Client::sendRequestToServer(jsonUpdateRequest);
         sleep(5);
     }

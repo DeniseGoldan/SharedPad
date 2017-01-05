@@ -15,7 +15,9 @@ auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
 auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
 auto query_logger = spd::stdout_color_mt("query_logger");
 auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
-auto forwardMessage_logger = spd::stdout_color_mt("forwardMessage_logger");
+
+//mutex Server::pairsMutex;
+//mutex Server::loggedUsersMutex;
 
 Server::Server()
 {
@@ -23,8 +25,10 @@ Server::Server()
     serverConfiguration.sin_family = AF_INET;
     inet_aton(ip, &serverConfiguration.sin_addr);
     serverConfiguration.sin_port = htons(port);
+
     loggedUsers = new map<string, User>();
     pairs = new map<string, string>();
+
     disconnectInactiveClients();
 }
 
@@ -340,6 +344,20 @@ GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientIn
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     loggedUsers->erase(username);
 
+    // Remove pair if username is in a pair
+    for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
+    {
+        if (0 == strcmp(username.c_str(),(*constIterator).first.c_str()))
+        {
+            pairs->erase((*constIterator).first.c_str());
+            break;
+        }
+        if (0 == strcmp(username.c_str(),(*constIterator).second.c_str()))
+        {
+            pairs->erase((*constIterator).first.c_str());
+            break;
+        }
+    }
     GenericResponseMessage *response = new GenericResponseMessage();
     response->setCode(LOGOUT_APPROVED_CODE);
     response->setCodeDescription(LOGOUT_APPROVED);
@@ -371,7 +389,6 @@ GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformatio
         response->setCode(QUERY_APPROVED_CODE);
         response->setCodeDescription(QUERY_APPROVED);
     }
-
     return response;
 }
 
@@ -381,7 +398,6 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
     GenericResponseMessage *response = new GenericResponseMessage();
     string sender = document->FindMember(ARGUMENTS)->value[SENDER].GetString();
     string receiver = document->FindMember(ARGUMENTS)->value[RECEIVER].GetString();
-
 
     if (usernameIsPaired(sender.c_str()))
     {
@@ -402,7 +418,6 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
         response->setReceiver(expected);
         return response;
     }
-
 
     if (loggedUsers->find(sender) != loggedUsers->cend())// sender is logged in
     {
@@ -469,6 +484,7 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
         response->setCode(USER_NOT_LOGGED_IN_CODE);
         response->setCodeDescription(USER_NOT_LOGGED_IN);
     }
+
     return response;
 }
 
@@ -515,7 +531,8 @@ void *Server::handleDisconnecting(void *)
                 }
             }
         }
-        handleDisconnecting_logger->info("Server will sleep for 10 seconds.");
+
+        handleDisconnecting_logger->info("Server's disconnecting service will sleep for 10 seconds.");
         sleep(10);
     }
 }

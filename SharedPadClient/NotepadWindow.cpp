@@ -171,6 +171,7 @@ void NotepadWindow::logout(){
     Client::sendRequestToServer(jsonLogoutRequest);
 
     this->hide();
+    exit(EXIT_SUCCESS);
 }
 
 void NotepadWindow::belongsTo(QString username){

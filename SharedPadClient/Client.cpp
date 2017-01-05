@@ -256,15 +256,21 @@ Client::sendRequestToServer(string jsonRequest){
     response->setCodeDescription(newDocument[CODE_DESCRIPTION].GetString());
 
     // if there is a full RECEIVER field, save the data
-
     if (newDocument.HasMember(RECEIVER)
             && newDocument[CODE].GetInt() == ALREADY_PAIRED_CODE
             && !newDocument[RECEIVER].IsNull())
     {
-        sendRequestToServer_logger->warn("____________INSIDE IF__________");
+        sendRequestToServer_logger->warn("___updating peer username___");
+        response->setReceiver(newDocument[RECEIVER].GetString());
+    }
 
-
-       //response->setReceiver(newDocument[RECEIVER].GetString());
+    // if my peer logged out and I press pairButton
+    if (newDocument.HasMember(RECEIVER)
+            && newDocument[CODE].GetInt() == USER_NOT_LOGGED_IN_CODE
+            && newDocument[RECEIVER].IsNull())
+    {
+        sendRequestToServer_logger->warn("___updating peer username to null___");
+        response->setReceiver("...you do not have a pair");
     }
 
     close(socketFD);
