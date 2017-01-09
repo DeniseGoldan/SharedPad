@@ -397,7 +397,7 @@ private:
 };
 
 
-//aggregate user chars to display as is
+//aggregate username chars to display as is
 class aggregate_formatter:public flag_formatter
 {
 public:
@@ -482,7 +482,7 @@ inline void spdlog::pattern_formatter::compile_pattern(const std::string& patter
     {
         if (*it == '%')
         {
-            if (user_chars) //append user chars found so far
+            if (user_chars) //append username chars found so far
                 _formatters.push_back(std::move(user_chars));
 
             if (++it != end)

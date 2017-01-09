@@ -1529,7 +1529,7 @@ private:
         wstring.size = str.size();
     }
 
-    // Formats an argument of a custom type, such as a user-defined class.
+    // Formats an argument of a custom type, such as a username-defined class.
     template <typename T>
     static void format_custom_arg(
         void *formatter, const void *arg, void *format_str_ptr)

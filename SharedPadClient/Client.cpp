@@ -167,8 +167,6 @@ Client::sendRequestToServer(string jsonRequest){
 
     GenericResponseMessage* response = new GenericResponseMessage();
 
-    sendRequestToServer_logger->info("Inside sendRequestToServer function.");
-
     int socketFD = Client::establishConnection();
 
     if (-1 == socketFD)
@@ -179,11 +177,11 @@ Client::sendRequestToServer(string jsonRequest){
         response->setCodeDescription(CONNECTION_FAILED);
         return response;
     }
-    sendRequestToServer_logger->info("jsonRequest");
-    sendRequestToServer_logger->info(jsonRequest);
+    //sendRequestToServer_logger->info("jsonRequest");
+    //sendRequestToServer_logger->info(jsonRequest);
 
     // Must add a prefix with the length of the request
-    sendRequestToServer_logger->info("prefixedJsonRequest");
+    //sendRequestToServer_logger->info("prefixedJsonRequest");
     int length = (int) jsonRequest.length();
     char *prefixedJsonRequest = (char *) malloc((size_t) (PREFIX_LENGTH + length + 1));
     bzero(prefixedJsonRequest, PREFIX_LENGTH + length + 1);
@@ -191,7 +189,7 @@ Client::sendRequestToServer(string jsonRequest){
     sendRequestToServer_logger->info(prefixedJsonRequest);
 
     // Write request into socket
-    sendRequestToServer_logger->info("Preparing to write the request into the socket.");
+    //sendRequestToServer_logger->info("Preparing to write the request into the socket.");
     int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonRequest);
     int totalBytesSent = 0;
     int count = 0;
@@ -227,14 +225,14 @@ Client::sendRequestToServer(string jsonRequest){
         }
     }
 
-    sendRequestToServer_logger->info("Finished writing the request into the socket.");
-    sendRequestToServer_logger->info("Reading the response from the server.");
+    //sendRequestToServer_logger->info("Finished writing the request into the socket.");
+    //sendRequestToServer_logger->info("Reading the response from the server.");
 
     // Reading server's response to the client's request
-    sendRequestToServer_logger->info("jsonResponseLength:");
+    //sendRequestToServer_logger->info("jsonResponseLength:");
     length = Client::readJsonResponseLengthFromServer(socketFD);
     sendRequestToServer_logger->info(length);
-    sendRequestToServer_logger->info("responseFromServer:");
+    //sendRequestToServer_logger->info("responseFromServer:");
     char * responseFromServer = Client::readJsonResponseFromServer(socketFD,length);
     sendRequestToServer_logger->info(responseFromServer);
 
@@ -275,7 +273,6 @@ Client::sendRequestToServer(string jsonRequest){
 
     close(socketFD);
     free(jsonDocument);
-    sendRequestToServer_logger->info("End of sendRequestToServer function...");
     return response;
 }
 

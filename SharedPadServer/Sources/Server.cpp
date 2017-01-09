@@ -16,8 +16,8 @@ auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logg
 auto query_logger = spd::stdout_color_mt("query_logger");
 auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
 
-//mutex Server::pairsMutex;
 //mutex Server::loggedUsersMutex;
+//mutex Server::pairsMutex;
 
 Server::Server()
 {
@@ -78,8 +78,7 @@ void Server::startListeningSession()
 
 void *Server::handleClient(void *client)
 {
-    handleClient_logger->info("Inside handleClient function.");
-    handleClient_logger->info("Setting socket options SO_RCVTIMEO and SO_SNDTIMEO.");
+    //handleClient_logger->info("Setting socket options SO_RCVTIMEO and SO_SNDTIMEO.");
     struct timeval timeout;
     timeout.tv_sec = 3;
     timeout.tv_usec = 0;
@@ -94,8 +93,8 @@ void *Server::handleClient(void *client)
     }
 
     int jsonRequestLength = readJsonRequestLength(currentClient);
-    handleClient_logger->info("jsonRequestLength");
-    handleClient_logger->info(jsonRequestLength);
+    //handleClient_logger->info("jsonRequestLength");
+    //handleClient_logger->info(jsonRequestLength);
     if (jsonRequestLength == -1)
     {
         handleClient_logger->warn("jsonRequestLength == -1");
@@ -103,8 +102,8 @@ void *Server::handleClient(void *client)
         pthread_exit(nullptr);
     }
     char *jsonRequest = readJsonRequestFromClient(currentClient, jsonRequestLength);
-    handleClient_logger->info("jsonRequest:");
-    handleClient_logger->info(jsonRequest);
+    //handleClient_logger->info("jsonRequest:");
+    //handleClient_logger->info(jsonRequest);
     if (jsonRequest == nullptr)
     {
         handleClient_logger->warn("jsonRequest == nullptr");
@@ -121,16 +120,14 @@ void *Server::handleClient(void *client)
         pthread_detach(pthread_self());
         pthread_exit(nullptr);
     }
-    handleClient_logger->info("Passed parsing of the request.");
-
+    //handleClient_logger->info("Passed parsing of the request.");
     GenericResponseMessage *message = executeRequest(currentClient, jsonDocument);
-    handleClient_logger->info("Executed request...");
+    //handleClient_logger->info("Executed request.");
     sendResponseToClient(*message, currentClient->clientSocketFD);
-    handleClient_logger->info("codeDescription:");
+    //handleClient_logger->info("codeDescription:");
     handleClient_logger->info(message->getCodeDescription());
 
     free(jsonRequest);
-    handleClient_logger->info("End of handleClient function.");
 
     pthread_detach(pthread_self());
     pthread_exit(nullptr);
@@ -230,17 +227,14 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
 
 bool Server::sendResponseToClient(const GenericResponseMessage &response, int clientSocketFD)
 {
-    sendResponseToClient_logger->info("Inside sendResponseToClient function.");
     string jsonResponse = JsonResponseMessageGenerator::getJsonBasicResponseMessage(response);
 
     int length = (int) jsonResponse.length();
     char *prefixedJsonResponse = (char *) malloc(sizeof(char)*(PREFIX_LENGTH + length + 1));
     bzero(prefixedJsonResponse, sizeof(prefixedJsonResponse));
     sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
-    sendResponseToClient_logger->info("prefixedJsonResponse");
     sendResponseToClient_logger->info(prefixedJsonResponse);
-
-    sendResponseToClient_logger->info("Preparing to write the response into the socket.");
+    //sendResponseToClient_logger->info("Preparing to write the response into the socket.");
     int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
     int totalBytesSent = 0;
     int count = 0;
@@ -270,7 +264,6 @@ bool Server::sendResponseToClient(const GenericResponseMessage &response, int cl
         }
     }
 
-    sendResponseToClient_logger->info("End of sendResponseToClient function.");
     free(prefixedJsonResponse);
     return true;
 }
@@ -321,13 +314,14 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     if (loggedUsers->find(username) == loggedUsers->cend())
     {
-        // Add new user to the loggedUsers map
+        // Add new username to the loggedUsers map
         User *newUserInformation = new User();
         newUserInformation->setAddress(clientInformation->address);
         loggedUsers->insert(pair<string, User>(username, *newUserInformation));
         // Send a "login approved" response back to the client
         response->setCode(LOGIN_APPROVED_CODE);
         response->setCodeDescription(LOGIN_APPROVED);
+        response->setIp(inet_ntoa(clientInformation->address.sin_addr));
     }
     else
     {
@@ -499,7 +493,6 @@ void Server::disconnectInactiveClients()
 
 void *Server::handleDisconnecting(void *)
 {
-    handleDisconnecting_logger->info("Inside function handleDisconnecting.");
     while (true)
     {
         printLoggedUsers();
@@ -531,8 +524,7 @@ void *Server::handleDisconnecting(void *)
                 }
             }
         }
-
-        handleDisconnecting_logger->info("Server's disconnecting service will sleep for 10 seconds.");
+        handleDisconnecting_logger->info("Disconnecting service stands by for 10 seconds.");
         sleep(10);
     }
 }

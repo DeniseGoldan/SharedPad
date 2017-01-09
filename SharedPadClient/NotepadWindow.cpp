@@ -54,7 +54,6 @@ void NotepadWindow::OnPairButtonPressed()
         pair_logger->warn(responseFromServer->getReceiver());
 
         string serverResponsePeer = responseFromServer->getReceiver();
-        //pair_logger->warn(serverResponsePeer);
 
         if (!serverResponsePeer.empty())
         {

@@ -240,7 +240,7 @@ inline bool spdlog::logger::should_log(spdlog::level::level_enum msg_level) cons
 }
 
 //
-// protected virtual called at end of each user log call (if enabled) by the line_logger
+// protected virtual called at end of each username log call (if enabled) by the line_logger
 //
 inline void spdlog::logger::_sink_it(details::log_msg& msg)
 {

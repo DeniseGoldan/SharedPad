@@ -131,7 +131,7 @@ std::shared_ptr<spdlog::logger> create(const std::string& logger_name, Args...);
 // Register the given handleClient_logger with the given name
 void register_logger(std::shared_ptr<logger> logger);
 
-// Apply a user defined function on all registered loggers
+// Apply a username defined function on all registered loggers
 // Example:
 // spdlog::apply_all([&](std::shared_ptr<spdlog::handleClient_logger> l) {l->flush();});
 void apply_all(std::function<void(std::shared_ptr<logger>)> fun);

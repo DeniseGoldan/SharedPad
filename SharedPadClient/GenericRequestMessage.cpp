@@ -44,6 +44,42 @@ void GenericRequestMessage::setReceiver(const string &receiver)
     this->receiver = receiver;
 }
 
+const string &GenericRequestMessage::getIp() const
+{
+    return ip;
+}
 
+void GenericRequestMessage::setIp(const string &ip)
+{
+    this->ip = ip;
+}
 
+int GenericRequestMessage::getPort() const
+{
+    return port;
+}
 
+void GenericRequestMessage::setPort(int port)
+{
+    this->port = port;
+}
+
+int GenericRequestMessage::getLine() const
+{
+    return line;
+}
+
+void GenericRequestMessage::setLine(int line)
+{
+    this->line = line;
+}
+
+const string &GenericRequestMessage::getContent() const
+{
+    return content;
+}
+
+void GenericRequestMessage::setContent(const string &content)
+{
+    this->content = content;
+}
