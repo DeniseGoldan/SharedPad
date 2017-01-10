@@ -34,7 +34,7 @@ void LoginWindow::OnLoginButtonPressed()
             }
             case LOGIN_APPROVED_CODE :
             {
-                QMessageBox::information(this,"Login approved!","The username you provided has now been registered.");
+                //QMessageBox::information(this,"Login approved!","The username you provided has now been registered.");
                 notepadWindow = new NotepadWindow(this);
                 notepadWindow->belongsTo(username);
                 notepadWindow->show();

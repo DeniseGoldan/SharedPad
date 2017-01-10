@@ -7,7 +7,7 @@
 
 // Loggers registy of unique name->handleClient_logger pointer
 // An attempt to create a handleClient_logger with an already existing name will be ignored
-// If username requests a non existing handleClient_logger, nullptr will be returned
+// If user requests a non existing handleClient_logger, nullptr will be returned
 // This class is thread safe
 
 #include <spdlog/details/null_mutex.h>

@@ -6,6 +6,7 @@
 
 class ErrorHandler {
 
+//handle methods
 public:
     static void handleErrorAndExitFailure(const char *errorMessage);
 

@@ -10,13 +10,12 @@ const char *const CODE_DESCRIPTION = "code_description";
 const char *const COMMAND = "command";
 const char *const ARGUMENTS = "arguments";
 
+const char *const CLIENT_IP_ADDRESS = "client_ip_address";
+const char *const CLIENT_PORT = "client_port";
+
 const char *const USERNAME = "username";
 const char *const SENDER = "sender";
 const char *const RECEIVER = "receiver";
-const char *const CLIENT_IP_ADDRESS = "client_ip_address";
-const char *const CLIENT_PORT = "client_port";
-const char *const CONTENT = "content";
-const char *const LINE = "line";
 
 const char *const STATUS = "status";
 const char *const ACCEPT = "accept";

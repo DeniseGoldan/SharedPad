@@ -77,6 +77,19 @@ GenericResponseMessage*Client::pair(string sender, string receiver){
     return responseFromServer;
 }
 
+GenericResponseMessage * Client::syncronize(string username, string content)
+{
+    GenericRequestMessage syncRequest;
+    syncRequest.setCommand(SYNCRONIZE);
+    syncRequest.setUsername(username);
+    syncRequest.setContent(content);
+
+    string jsonSyncRequest = JsonRequestMessageGenerator::getJsonSyncRequestMessage(syncRequest);
+    GenericResponseMessage* responseFromServer = Client::sendRequestToServer(jsonSyncRequest);
+    return responseFromServer;
+}
+
+
 int Client::readJsonResponseLengthFromServer(int socketFD)
 {
     char currentCharacter[2];
@@ -126,30 +139,30 @@ char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
         int bytesToReadInCurrentSession;
 
         (totalBytesLeftToRead < BUFF_SIZE) ?
-                bytesToReadInCurrentSession = totalBytesLeftToRead :
+                    bytesToReadInCurrentSession = totalBytesLeftToRead :
                 bytesToReadInCurrentSession = BUFF_SIZE;
 
         count = (int) read(socketFD, jsonResponse + totalBytesRead,
                            (size_t) bytesToReadInCurrentSession);
         switch(count)
         {
-            case -1:
-            {
-                close(socketFD);
-                readJsonResponseFromServer_logger->warn("Reading response from server failed: -1 == count");
-                return nullptr;
-            }
-            case 0:
-            {
-                close(socketFD);
-                readJsonResponseFromServer_logger->warn("Reading response from server failed: 0 == count");
-                return nullptr;
-            }
-            default:
-            {
-                totalBytesRead += count;
-                totalBytesLeftToRead -= count;
-            }
+        case -1:
+        {
+            close(socketFD);
+            readJsonResponseFromServer_logger->warn("Reading response from server failed: -1 == count");
+            return nullptr;
+        }
+        case 0:
+        {
+            close(socketFD);
+            readJsonResponseFromServer_logger->warn("Reading response from server failed: 0 == count");
+            return nullptr;
+        }
+        default:
+        {
+            totalBytesRead += count;
+            totalBytesLeftToRead -= count;
+        }
         }
     }
 
@@ -199,29 +212,29 @@ Client::sendRequestToServer(string jsonRequest){
         count = (int) write(socketFD, prefixedJsonRequest + totalBytesSent, BUFF_SIZE);
         switch(count)
         {
-            case -1:
-            {
-                close(socketFD);
-                free(prefixedJsonRequest);
-                sendRequestToServer_logger->warn("Writing request to server failed: -1 == count");
-                response->setCode(WRITE_FAILED_CODE);
-                response->setCodeDescription(WRITE_FAILED);
-                return response;
-            }
-            case 0:
-            {
-                close(socketFD);
-                free(prefixedJsonRequest);
-                sendRequestToServer_logger->warn("Writing request to server failed: 0 == count");
-                response->setCode(WRITE_FAILED_CODE);
-                response->setCodeDescription(WRITE_FAILED);
-                return response;
-            }
-            default:
-            {
-                totalBytesSent += count;
-                totalBytesLeftToSend -= count;
-            }
+        case -1:
+        {
+            close(socketFD);
+            free(prefixedJsonRequest);
+            sendRequestToServer_logger->warn("Writing request to server failed: -1 == count");
+            response->setCode(WRITE_FAILED_CODE);
+            response->setCodeDescription(WRITE_FAILED);
+            return response;
+        }
+        case 0:
+        {
+            close(socketFD);
+            free(prefixedJsonRequest);
+            sendRequestToServer_logger->warn("Writing request to server failed: 0 == count");
+            response->setCode(WRITE_FAILED_CODE);
+            response->setCodeDescription(WRITE_FAILED);
+            return response;
+        }
+        default:
+        {
+            totalBytesSent += count;
+            totalBytesLeftToSend -= count;
+        }
         }
     }
 

@@ -43,6 +43,7 @@ private slots:
      void saveFile();
      void logout();
      void OnPairButtonPressed();
+     void OnSyncronizeButtonPressed();
 
 private:
     Ui::NotepadWindow *ui;

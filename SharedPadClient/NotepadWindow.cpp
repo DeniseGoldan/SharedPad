@@ -10,6 +10,8 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     ui->setupUi(this);
 
     connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
+    connect(ui->syncronizeButton, SIGNAL(clicked()), this, SLOT (OnSyncronizeButtonPressed()));
+
 
     openAction = new QAction(tr("&Open file"), this);
     openAction->setShortcuts(QKeySequence::Open);
@@ -63,19 +65,41 @@ void NotepadWindow::OnPairButtonPressed()
 
         switch(responseFromServer->getCode())
         {
-            case PAIR_ADDED_CODE :
-            {
-                QMessageBox::information(this,"Pair approved!","You have a pair.");
-                ui->peerUsernameTag->setText(peerUsername);
-                break;
-            }
-            default:
-            {
-                QMessageBox::information(this,"Pair not approved!","Sorry...");
-                break;
-            }
+        case PAIR_ADDED_CODE :
+        {
+            QMessageBox::information(this,"Pair approved!","You have a pair.");
+            ui->peerUsernameTag->setText(peerUsername);
+            break;
+        }
+        default:
+        {
+            QMessageBox::information(this,"Pair not approved!","Sorry...");
+            break;
+        }
         }
     }
+}
+
+
+void NotepadWindow::OnSyncronizeButtonPressed()
+{
+    Client * client = new Client();
+    GenericResponseMessage * responseFromServer = client->syncronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
+
+    switch(responseFromServer->getCode())
+    {
+    case YOU_ARE_SINGLE_CODE :
+    {
+        QMessageBox::information(this,"Syncronization failure","You do not have a pair.");
+        break;
+    }
+    case SYNC_SUCCES_CODE:
+    {
+        QMessageBox::information(this,"Syncronization succes","You and you peer now share the same text content.");
+        break;
+    }
+    }
+
 }
 
 

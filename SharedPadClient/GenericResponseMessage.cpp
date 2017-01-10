@@ -9,19 +9,9 @@ int GenericResponseMessage::getCode() const
     return code;
 }
 
-void GenericResponseMessage::setCode(int code)
-{
-    this->code = code;
-}
-
 const string &GenericResponseMessage::getCodeDescription() const
 {
     return codeDescription;
-}
-
-void GenericResponseMessage::setCodeDescription(const string &codeDescription)
-{
-    this->codeDescription = codeDescription;
 }
 
 const string &GenericResponseMessage::getSender() const
@@ -29,16 +19,25 @@ const string &GenericResponseMessage::getSender() const
     return sender;
 }
 
-void GenericResponseMessage::setSender(const string &sender)
-{
-    GenericResponseMessage::sender = sender;
-}
-
 const string &GenericResponseMessage::getReceiver() const
 {
     return receiver;
 }
 
+void GenericResponseMessage::setCode(int code)
+{
+    this->code = code;
+}
+
+void GenericResponseMessage::setCodeDescription(const string &codeDescription)
+{
+    this->codeDescription = codeDescription;
+}
+
+void GenericResponseMessage::setSender(const string &sender)
+{
+    GenericResponseMessage::sender = sender;
+}
 
 void GenericResponseMessage::setReceiver(const string &receiver)
 {

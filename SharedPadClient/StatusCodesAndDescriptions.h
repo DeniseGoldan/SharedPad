@@ -20,6 +20,14 @@ const char *const RECEIVER = "receiver";
 const char *const STATUS = "status";
 const char *const ACCEPT = "accept";
 const char *const DECLINE = "decline";
+const char *const CONTENT = "content";
+const char *const SYNCRONIZE = "syncronize";
+
+const char *const YOU_ARE_SINGLE = "you_are_single";
+const int YOU_ARE_SINGLE_CODE = 211001;
+
+const char *const SYNC_SUCCES = "sync_success";
+const int SYNC_SUCCES_CODE = 411001;
 
 const char *const UNKNOWN = "unknown";
 const int UNKNOWN_CODE = 4000;

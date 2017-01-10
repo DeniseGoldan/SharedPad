@@ -14,9 +14,9 @@ public:
 
     int getCode() const;
 
-    void setCode(int code);
-
     const string &getCodeDescription() const;
+
+    void setCode(int code);
 
     void setCodeDescription(const string &codeDescription);
 
