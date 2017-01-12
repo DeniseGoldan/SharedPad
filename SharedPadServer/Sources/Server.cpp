@@ -129,7 +129,7 @@ void *Server::handleClient(void *client)
     handleClient_logger->info("codeDescription:");
     handleClient_logger->info(message->getCodeDescription());
 
-    free(jsonRequest);
+    //free(jsonRequest);
     handleClient_logger->info("End of handleClient function.");
 
     pthread_detach(pthread_self());
@@ -138,8 +138,9 @@ void *Server::handleClient(void *client)
 
 int Server::readJsonRequestLength(const ClientInformation *currentClient)
 {
-    char *prefix = (char *) malloc(sizeof(char) * PREFIX_LENGTH);
+    char *prefix = (char *) malloc(sizeof(char) * (PREFIX_LENGTH));
     bzero(prefix, PREFIX_LENGTH);
+    strcpy(prefix, "");
 
     char currentCharacter[2];
     int totalBytesRead = 0, count = 0;
@@ -184,8 +185,8 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
     }
 
     int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
-    char *jsonResponse = (char *) malloc(sizeof(char) * (jsonRequestLength + 2));
-    bzero(jsonResponse, (size_t)(jsonRequestLength + 1));
+    char *jsonResponse = (char *) malloc((sizeof(char)) * (jsonRequestLength + 2));
+    //bzero(jsonResponse, (size_t)(jsonRequestLength + 1));
 
     while (totalBytesLeftToRead > 0)
     {
@@ -293,7 +294,7 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
 
     executeRequest_logger->warn("Finding out the command's name.");
 
-    char * command = (char *) malloc(MAX_COMM_NAME_LEN * sizeof(char));
+    char * command = (char *) malloc(500 * sizeof(char));
     strcpy(command, document->FindMember(COMMAND)->value.GetString());
 
     if (0 == strcmp(LOGIN, command))
@@ -315,10 +316,16 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
     {
         response = executePairRequest(currentClient, document);
     }
+
+    if (0 == strcmp(SYNCRONIZE, command))
+    {
+        response = executeSyncRequest(currentClient, document);
+    }
     return response;
+
 }
 
-GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInformation, Document *document)
 {
     GenericResponseMessage *response = new GenericResponseMessage();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -341,7 +348,7 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
     return response;
 }
 
-GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientInformation, Document *document)
 {
     // Remove username from loggedUsers list
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -367,7 +374,7 @@ GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientIn
     return response;
 }
 
-GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformation, rapidjson::Document *document)
+GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformation, Document *document)
 {
     GenericResponseMessage *response = new GenericResponseMessage();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -585,5 +592,26 @@ bool Server::usernameIsPaired(const char* username)
         }
     }
     return false;
+}
+
+GenericResponseMessage *Server::executeSyncRequest(ClientInformation *clientInformation, Document *document)
+{
+    GenericResponseMessage *response = new GenericResponseMessage();
+
+    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
+    string content = document->FindMember(ARGUMENTS)->value[CONTENT].GetString();
+
+    if (!usernameIsPaired(username.c_str()))
+    {
+        response->setCode(YOU_ARE_SINGLE_CODE);
+        response->setCodeDescription(YOU_ARE_SINGLE);
+        return response;
+    }
+
+    // TODO :  send message to peer, so that they update the textEdit area
+
+    response->setCode(SYNC_SUCCES_CODE);
+    response->setCodeDescription(SYNC_SUCCES);
+    return response;
 }
 

@@ -69,6 +69,8 @@ private:
 
     static GenericResponseMessage *executePairRequest(ClientInformation *clientInformation, Document *document);
 
+    static GenericResponseMessage *executeSyncRequest(ClientInformation *clientInformation, Document *document);
+
     static void disconnectInactiveClients();
 
     static void *handleDisconnecting(void *);

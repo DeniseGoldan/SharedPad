@@ -15,10 +15,10 @@ class JsonResponseMessageParser
 {
 public:
     JsonResponseMessageParser();
-    static rapidjson::Document * parseJsonMessage(const char * jsonMessage);
+    static Document * parseJsonMessage(const char * jsonMessage);
 
 private:
-    static bool codeCorrespondsToContent(int code, const rapidjson::Document &document);
+    static bool codeCorrespondsToContent(int code, const Document &document);
 };
 
 #endif // JSONRESPONSEMESSAGEPARSER_H

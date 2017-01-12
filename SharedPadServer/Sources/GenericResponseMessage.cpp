@@ -43,3 +43,53 @@ void GenericResponseMessage::setReceiver(const string &receiver)
 {
     GenericResponseMessage::receiver = receiver;
 }
+
+const string &GenericResponseMessage::getUsername() const
+{
+    return username;
+}
+
+void GenericResponseMessage::setUsername(const string &user)
+{
+    GenericResponseMessage::username = user;
+}
+
+const string &GenericResponseMessage::getIp() const
+{
+    return ip;
+}
+
+void GenericResponseMessage::setIp(const string &ip)
+{
+    GenericResponseMessage::ip = ip;
+}
+
+int GenericResponseMessage::getPort() const
+{
+    return port;
+}
+
+void GenericResponseMessage::setPort(int port)
+{
+    GenericResponseMessage::port = port;
+}
+
+int GenericResponseMessage::getLine() const
+{
+    return line;
+}
+
+void GenericResponseMessage::setLine(int line)
+{
+    GenericResponseMessage::line = line;
+}
+
+const string &GenericResponseMessage::getContent() const
+{
+    return content;
+}
+
+void GenericResponseMessage::setContent(const string &content)
+{
+    GenericResponseMessage::content = content;
+}

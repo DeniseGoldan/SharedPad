@@ -94,8 +94,9 @@ int Client::readJsonResponseLengthFromServer(int socketFD)
 {
     char currentCharacter[2];
     int totalBytesRead = 0, count = 0;
-    char *prefix = (char *) malloc(sizeof(char) * PREFIX_LENGTH);
+    char *prefix = (char *) malloc(sizeof(char) * (PREFIX_LENGTH));
     bzero(prefix, PREFIX_LENGTH);
+    strcpy(prefix,"");
 
     while (PREFIX_LENGTH > totalBytesRead)
     {
@@ -132,7 +133,7 @@ char *Client::readJsonResponseFromServer(int socketFD, int jsonResponseLength)
 
     int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonResponseLength + 1;
     char *jsonResponse = (char *) malloc(sizeof(char) * (jsonResponseLength + 2));
-    bzero(jsonResponse, jsonResponseLength + 1);
+    //bzero(jsonResponse, jsonResponseLength + 1);
 
     while (totalBytesLeftToRead > 0)
     {

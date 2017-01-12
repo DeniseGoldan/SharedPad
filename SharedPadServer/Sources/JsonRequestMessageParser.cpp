@@ -61,6 +61,7 @@ bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command,
             return false;
         }
     }
+
     // PAIR_REQUEST
     if (command == PAIR_REQUEST)
     {
@@ -69,6 +70,19 @@ bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command,
             return false;
         }
         if (!document[ARGUMENTS].HasMember(RECEIVER) || !document[ARGUMENTS][RECEIVER].IsString())
+        {
+            return false;
+        }
+    }
+
+    // SYNCRONIZE
+    if (command == SYNCRONIZE)
+    {
+        if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString())
+        {
+            return false;
+        }
+        if (!document[ARGUMENTS].HasMember(CONTENT) || !document[ARGUMENTS][CONTENT].IsString())
         {
             return false;
         }

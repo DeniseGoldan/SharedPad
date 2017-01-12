@@ -20,6 +20,14 @@ const char *const RECEIVER = "receiver";
 const char *const STATUS = "status";
 const char *const ACCEPT = "accept";
 const char *const DECLINE = "decline";
+const char *const CONTENT = "content";
+const char *const SYNCRONIZE = "syncronize";
+
+const char *const YOU_ARE_SINGLE = "you_are_single";
+const int YOU_ARE_SINGLE_CODE = 211001;
+
+const char *const SYNC_SUCCES = "sync_success";
+const int SYNC_SUCCES_CODE = 411001;
 
 const char *const UNKNOWN = "unknown";
 const int UNKNOWN_CODE = 4000;
@@ -67,5 +75,8 @@ const int CONNECTION_FAILED_CODE = 4005;
 
 const char *const JSON_PARSING_FAILED = "json_parsing_failed";
 const int JSON_PARSING_FAILED_CODE = 4009;
+
+const char *const WRITE_FAILED = "write_failed";
+const int WRITE_FAILED_CODE = 40;
 
 #endif //NAMESPACESPP_H
