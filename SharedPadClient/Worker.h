@@ -2,7 +2,6 @@
 #define WORKER_H
 
 #include <QObject>
-#include <QTime>
 #include <string.h>
 
 #include "GenericRequestMessage.h"

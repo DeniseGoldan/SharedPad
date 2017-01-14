@@ -23,9 +23,9 @@ Document *JsonResponseMessageParser::parseJsonMessage(const char *jsonMessage)
         return nullptr;
     }
 
-    if (stackDocument[CODE].IsNull()||stackDocument[CODE_DESCRIPTION].IsNull())
+    if (stackDocument[CODE].IsNull())
     {
-        parseJsonMessagelogger->warn("The document has a null member.");
+        parseJsonMessagelogger->warn("The document has a null member(CODE).");
         return nullptr;
     }
 

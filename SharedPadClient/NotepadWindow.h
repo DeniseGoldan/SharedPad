@@ -6,11 +6,13 @@
 #include <QWidget>
 #include <QFileDialog>
 #include <QFile>
+#include <QTime>
+#include <QEvent>
+#include <QKeyEvent>
 #include <QTextStream>
 #include <QThread>
 #include <string.h>
 
-#include "TextFileEditor.h"
 #include "GenericRequestMessage.h"
 #include "JsonRequestMessageGenerator.h"
 #include "StatusCodesAndDescriptions.h"
@@ -37,6 +39,8 @@ public:
     void belongsTo(QString username);
     QString getUsername();
     void check();
+    bool eventFilter(QObject *object, QEvent *event);
+
 
 public slots:
     void handleReceiveFileFromPartner(QString content);

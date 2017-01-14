@@ -35,6 +35,6 @@ void Worker::checkInbox()
                 break;
             }
         }
-        sleep(5);
+        sleep(2);
     }
 }

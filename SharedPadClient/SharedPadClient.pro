@@ -22,7 +22,6 @@ SOURCES += main.cpp\
     spdlog/fmt/bundled/ostream.cc \
     LoginWindow.cpp \
     NotepadWindow.cpp \
-    TextFileEditor.cpp \
     QuerySender.cpp \
     Client.cpp \
     ClientHelper.cpp \
@@ -105,7 +104,6 @@ HEADERS  += \
     spdlog/tweakme.h \
     LoginWindow.h \
     NotepadWindow.h \
-    TextFileEditor.h \
     StatusCodesAndDescriptions.h \
     QuerySender.h \
     Client.h \

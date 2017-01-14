@@ -5,12 +5,14 @@
 auto pair_logger = spd::stdout_color_mt("pair_logger");
 auto checkNews_logger = spd::stdout_color_mt("checkNews_logger");
 auto handleReceiverFile_logger = spd::stdout_color_mt("handleReceiverFile_logger");
+auto sync_logger = spd::stdout_color_mt("sync_logger");
 
 NotepadWindow::NotepadWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::NotepadWindow)
 {
     ui->setupUi(this);
+    ui->textEdit->installEventFilter(this);
 
     connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
     connect(ui->syncronizeButton, SIGNAL(clicked()), this, SLOT (OnSyncronizeButtonPressed()));
@@ -36,6 +38,29 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     fileMenu->addAction(logoutAction);
 }
 
+bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
+{
+    if (object == ui->textEdit && event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->matches(QKeySequence::SelectAll) || keyEvent->matches(QKeySequence::Copy) || keyEvent->matches(QKeySequence::Paste))
+        {
+            // Do nothing
+            return true;
+        }
+        else
+        {
+            if (keyEvent->text().length() != 0)
+            {
+                sync_logger->warn(keyEvent->text().toStdString().c_str());
+                Client::synchronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
+                return QWidget::eventFilter(object,event);
+            }
+        }
+    }
+    return false;
+}
+
 void NotepadWindow::OnPairButtonPressed()
 {
     QString sender = ui->usernameTag->text();
@@ -53,8 +78,6 @@ void NotepadWindow::OnPairButtonPressed()
         GenericResponseMessage * responseFromServer = client->pair(sender.toStdString(), peerUsername.toStdString());
         pair_logger->warn(responseFromServer->getCode());
         pair_logger->warn(responseFromServer->getCodeDescription());
-        //pair_logger->warn(responseFromServer->getSender());
-        //pair_logger->warn(responseFromServer->getReceiver());
 
         string serverResponsePeer = responseFromServer->getReceiver();
 
@@ -66,38 +89,46 @@ void NotepadWindow::OnPairButtonPressed()
 
         switch(responseFromServer->getCode())
         {
-            case PAIR_ADDED_CODE :
-            {
-                QMessageBox::information(this,"Pair approved!","You have a pair.");
-                ui->peerUsernameTag->setText(peerUsername);
-                break;
-            }
-            default:
-            {
-                QMessageBox::information(this,"Pair not approved!","Sorry...");
-                break;
-            }
+        case PAIR_ADDED_CODE :
+        {
+            QMessageBox::information(this,"Pair approved!","You have a pair.");
+            ui->peerUsernameTag->setText(peerUsername);
+            break;
+        }
+        default:
+        {
+            QMessageBox::information(this,"Pair not approved!","Sorry...");
+            break;
+        }
         }
     }
 }
 
 void NotepadWindow::OnSyncronizeButtonPressed()
 {
+    QString peerUsername = ui->peerUsernameTag->text();
+    sync_logger->warn(peerUsername.toStdString());
+    if (peerUsername.isNull())
+    {
+        QMessageBox::information(this, tr("Error message"), "You must have a peer. Check if you have a peer or send a request!");
+        return;
+    }
+
     Client * client = new Client();
     GenericResponseMessage * responseFromServer = client->synchronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
 
     switch(responseFromServer->getCode())
     {
-        case YOU_ARE_SINGLE_CODE :
-        {
-            QMessageBox::information(this,"Syncronization failure","You do not have a pair.");
-            break;
-        }
-        case SENT_NEWS_TO_PEER_CODE:
-        {
-            QMessageBox::information(this,"Syncronization succes","You and you peer now share the same text content.");
-            break;
-        }
+    case YOU_ARE_SINGLE_CODE :
+    {
+        QMessageBox::information(this,"Error message","You do not have a pair.");
+        break;
+    }
+    case SENT_NEWS_TO_PEER_CODE:
+    {
+        QMessageBox::information(this,"Information","You and you peer now share the same text content.");
+        break;
+    }
     }
 }
 
@@ -124,7 +155,8 @@ void NotepadWindow::handleReceiveFileFromPartner(QString content)
 
 void NotepadWindow::openFile(){
 
-    if (ui->textEdit->toPlainText() != nullptr){
+    if (ui->textEdit->toPlainText() != nullptr)
+    {
         QMessageBox confirm;
         confirm.setText(tr("Opening a new file means discarding the editing done on the current file. Do you wish to proceed?"));
         confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);

@@ -34,11 +34,7 @@ void *QuerySender::handleUpdating(void *argument)
         Client::sendRequestToServer(jsonUpdateRequest);
         sleep(5);
     }
-
-    pthread_detach(pthread_self());
-    pthread_exit(nullptr);
 }
-
 
 QString QuerySender::getUsername() const
 {
