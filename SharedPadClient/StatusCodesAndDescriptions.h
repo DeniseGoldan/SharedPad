@@ -42,8 +42,9 @@ const int LOGOUT_APPROVED_CODE = 201;
 const char *const QUERY = "query";
 const char *const QUERY_APPROVED = "query_approved";
 const int QUERY_APPROVED_CODE = 202;
-//PAIR
+//PAIR and UNPAIR
 const char *const PAIR_REQUEST = "pair_request";
+const char *const UNPAIR_REQUEST = "unpair_request";
 const char *const PAIR_ADDED = "pair_added";
 const int PAIR_ADDED_CODE = 203;
 const char *const INVITED_YOURSELF = "invited_yourself";

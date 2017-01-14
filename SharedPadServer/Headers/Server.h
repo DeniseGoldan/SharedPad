@@ -69,6 +69,8 @@ private:
 
     static GenericResponseMessage *executePairRequest(ClientInformation *clientInformation, Document *document);
 
+    static GenericResponseMessage *executeUnpairRequest(ClientInformation *clientInformation, Document *document);
+
     static GenericResponseMessage *executeSendNews(ClientInformation *clientInformation, Document *document);
 
     static GenericResponseMessage *executeCheckNews(ClientInformation *clientInformation, Document *document);

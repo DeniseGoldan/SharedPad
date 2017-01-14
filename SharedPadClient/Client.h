@@ -33,7 +33,6 @@ public:
     static GenericResponseMessage * synchronize(string username, string content);
     static GenericResponseMessage * sendRequestToServer(string jsonRequest);
 
-
 private:
     static sockaddr_in serverConfiguration;
     static const char * ip;

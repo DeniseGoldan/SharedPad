@@ -30,7 +30,7 @@ void User::setPeerFileContent(const string &peerFileContent)
     User::peerFileContent = peerFileContent;
 }
 
-bool User::doeshaveFileContentFromPeer() const
+bool User::doesHaveFileContentFromPeer() const
 {
     return hasFileContentFromPeer;
 }

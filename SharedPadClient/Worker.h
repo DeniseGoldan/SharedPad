@@ -23,6 +23,7 @@ public slots:
 
 signals:
     void receiveFileFromPartner(QString content);
+    void receivePeerUsername(QString peerUsername);
 
 private:
     string username;

@@ -44,12 +44,14 @@ public:
 
 public slots:
     void handleReceiveFileFromPartner(QString content);
+    void handleReceivePeerUsername(QString peerUsername);
 
 private slots:
      void openFile();
      void saveFile();
      void logout();
      void OnPairButtonPressed();
+     void OnUnpairButtonPressed();
      void OnSyncronizeButtonPressed();
 
 private:

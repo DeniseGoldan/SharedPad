@@ -15,6 +15,7 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     ui->textEdit->installEventFilter(this);
 
     connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
+    connect(ui->unpairButton, SIGNAL(clicked()), this, SLOT (OnUnpairButtonPressed()));
     connect(ui->syncronizeButton, SIGNAL(clicked()), this, SLOT (OnSyncronizeButtonPressed()));
 
     openAction = new QAction(tr("&Open file"), this);
@@ -104,6 +105,28 @@ void NotepadWindow::OnPairButtonPressed()
     }
 }
 
+void NotepadWindow::OnUnpairButtonPressed()
+{
+    QMessageBox confirm;
+    confirm.setText(tr("You are going to unpair from your collaborator. Do you wish to proceed?"));
+    confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    confirm.setDefaultButton(QMessageBox::No);
+
+    if(confirm.exec() == QMessageBox::No)
+    {
+        return;
+    }
+
+    GenericRequestMessage unpairRequest;
+    unpairRequest.setCommand(UNPAIR_REQUEST);
+    unpairRequest.setUsername(username.toStdString());
+
+    string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(unpairRequest);
+    Client::sendRequestToServer(jsonLogoutRequest);
+
+    ui->peerUsernameTag->setText("");
+}
+
 void NotepadWindow::OnSyncronizeButtonPressed()
 {
     QString peerUsername = ui->peerUsernameTag->text();
@@ -140,8 +163,8 @@ void NotepadWindow::check()
     QObject::connect(thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
     QObject::connect(thread, SIGNAL(started()), worker, SLOT(checkInbox()));
 
-    QObject::connect(worker, SIGNAL(receiveFileFromPartner(QString)),
-                     this, SLOT(handleReceiveFileFromPartner(QString)));
+    QObject::connect(worker, SIGNAL(receiveFileFromPartner(QString)), this, SLOT(handleReceiveFileFromPartner(QString)));
+    QObject::connect(worker, SIGNAL(receivePeerUsername(QString)), this, SLOT(handleReceivePeerUsername(QString)));
 
     worker->moveToThread(thread);
     thread->start();
@@ -149,8 +172,14 @@ void NotepadWindow::check()
 
 void NotepadWindow::handleReceiveFileFromPartner(QString content)
 {
-    handleReceiverFile_logger->warn(content.toStdString());
+    //handleReceiverFile_logger->warn(content.toStdString());
     ui->textEdit->setText(content);
+}
+
+void NotepadWindow::handleReceivePeerUsername(QString peerUsername)
+{
+    //handleReceiverFile_logger->warn(content.toStdString());
+    ui->peerUsernameTag->setText(peerUsername);
 }
 
 void NotepadWindow::openFile(){

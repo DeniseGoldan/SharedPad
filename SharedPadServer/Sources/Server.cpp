@@ -59,7 +59,8 @@ void Server::startListeningSession()
     while (1)
     {
         ClientInformation *currentClient = new ClientInformation();
-        currentClient->clientSocketFD = accept(serverSocketFD, (sockaddr *) &currentClient->address, &currentClient->addressLength);
+        currentClient->clientSocketFD = accept(serverSocketFD, (sockaddr *) &currentClient->address,
+                                               &currentClient->addressLength);
 
         if (-1 == currentClient->clientSocketFD)
         {
@@ -154,7 +155,7 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
 
     executeRequest_logger->warn("Finding out the command's name.");
 
-    char * command = (char *) malloc(500 * sizeof(char));
+    char *command = (char *) malloc(500 * sizeof(char));
     strcpy(command, "");
     strcpy(command, document->FindMember(COMMAND)->value.GetString());
 
@@ -176,6 +177,11 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
     if (0 == strcmp(PAIR_REQUEST, command))
     {
         response = executePairRequest(currentClient, document);
+    }
+
+    if (0 == strcmp(UNPAIR_REQUEST, command))
+    {
+        response = executeUnpairRequest(currentClient, document);
     }
 
     if (0 == strcmp(SEND_NEWS, command))
@@ -204,8 +210,7 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
         // Send a "login approved" response back to the client
         response->setCode(LOGIN_APPROVED_CODE);
         response->setCodeDescription(LOGIN_APPROVED);
-    }
-    else
+    } else
     {
         // Username is already registered, send a "login failed" response back to the client
         response->setCode(LOGIN_FAILED_CODE);
@@ -223,12 +228,12 @@ GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientIn
     // Remove pair if username is in a pair
     for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
     {
-        if (0 == strcmp(username.c_str(),(*constIterator).first.c_str()))
+        if (0 == strcmp(username.c_str(), (*constIterator).first.c_str()))
         {
             pairs->erase((*constIterator).first.c_str());
             break;
         }
-        if (0 == strcmp(username.c_str(),(*constIterator).second.c_str()))
+        if (0 == strcmp(username.c_str(), (*constIterator).second.c_str()))
         {
             pairs->erase((*constIterator).first.c_str());
             break;
@@ -251,8 +256,7 @@ GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformatio
         // Username is not registered
         response->setCode(USER_NOT_LOGGED_IN_CODE);
         response->setCodeDescription(USER_NOT_LOGGED_IN);
-    }
-    else
+    } else
     {
         // Username was found in the list
         timeval now;
@@ -279,15 +283,17 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
     {
         response->setCode(ALREADY_PAIRED_CODE);
         response->setCodeDescription(ALREADY_PAIRED);
-        char * expected = (char*) malloc (MAX_COMM_NAME_LEN*sizeof(char));
+        char *expected = (char *) malloc(MAX_COMM_NAME_LEN * sizeof(char));
         for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
         {
-            if(0 == strcmp((*constIterator).first.c_str(),sender.c_str())){
-                strcpy(expected,(*constIterator).second.c_str());
+            if (0 == strcmp((*constIterator).first.c_str(), sender.c_str()))
+            {
+                strcpy(expected, (*constIterator).second.c_str());
                 break;
             }
-            if(0 == strcmp((*constIterator).second.c_str(),sender.c_str())){
-                strcpy(expected,(*constIterator).first.c_str());
+            if (0 == strcmp((*constIterator).second.c_str(), sender.c_str()))
+            {
+                strcpy(expected, (*constIterator).first.c_str());
                 break;
             }
         }
@@ -306,8 +312,7 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
                 pairRequest_logger->warn("sender is the same as receiver");
                 response->setCode(INVITED_YOURSELF_CODE);
                 response->setCodeDescription(INVITED_YOURSELF);
-            }
-            else // sender is different from receiver
+            } else // sender is different from receiver
             {
                 pairRequest_logger->info("sender is different from receiver");
                 if (usernameIsPaired(sender.c_str()) || usernameIsPaired(receiver.c_str()))// already paired
@@ -319,22 +324,23 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
                     {
                         response->setCode(ALREADY_PAIRED_CODE);
                         response->setCodeDescription(ALREADY_PAIRED);
-                        char * expected = (char*) malloc (MAX_COMM_NAME_LEN*sizeof(char));
+                        char *expected = (char *) malloc(MAX_COMM_NAME_LEN * sizeof(char));
                         for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
                         {
-                            if(0 == strcmp((*constIterator).first.c_str(),sender.c_str())){
-                                strcpy(expected,(*constIterator).second.c_str());
+                            if (0 == strcmp((*constIterator).first.c_str(), sender.c_str()))
+                            {
+                                strcpy(expected, (*constIterator).second.c_str());
                                 break;
                             }
-                            if(0 == strcmp((*constIterator).second.c_str(),sender.c_str())){
-                                strcpy(expected,(*constIterator).first.c_str());
+                            if (0 == strcmp((*constIterator).second.c_str(), sender.c_str()))
+                            {
+                                strcpy(expected, (*constIterator).first.c_str());
                                 break;
                             }
                         }
                         response->setReceiver(expected);
                     }
-                }
-                else
+                } else
                 {
                     pairRequest_logger->info("sender and receiver have not been paired yet");
                     if (!usernameIsPaired(sender.c_str()) && !usernameIsPaired(receiver.c_str()))//not already paired
@@ -346,15 +352,13 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
                     }
                 }
             }
-        }
-        else//receiver not logged in
+        } else//receiver not logged in
         {
             pairRequest_logger->info("receiver not logged in");
             response->setCode(USER_NOT_LOGGED_IN_CODE);
             response->setCodeDescription(USER_NOT_LOGGED_IN);
         }
-    }
-    else// sender not logged in
+    } else// sender not logged in
     {
         pairRequest_logger->info("sender not logged in");
         response->setCode(USER_NOT_LOGGED_IN_CODE);
@@ -376,8 +380,7 @@ GenericResponseMessage *Server::executeSendNews(ClientInformation *clientInforma
         response->setCode(YOU_ARE_SINGLE_CODE);
         response->setCodeDescription(YOU_ARE_SINGLE);
         return response;
-    }
-    else
+    } else
     {
         string peerUsername = getPeerUsername(username);
         loggedUsers->at(peerUsername).setHasFileContentFromPeer(true);
@@ -394,7 +397,22 @@ GenericResponseMessage *Server::executeCheckNews(ClientInformation *clientInform
     GenericResponseMessage *response = new GenericResponseMessage();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
 
-    if (loggedUsers->at(username).doeshaveFileContentFromPeer())
+    if (!loggedUsers->at(username).doesHaveFileContentFromPeer())
+    {
+        if (usernameIsPaired(username.c_str()))
+        {
+            response->setCode(PAIR_ADDED_CODE);
+            response->setCodeDescription(getPeerUsername(username));
+            return response;
+        }
+        else
+        {
+            response->setCode(PAIR_ADDED_CODE);
+            response->setCodeDescription("...you do not have a pair");
+            return response;
+        }
+    }
+    else
     {
         response->setCode(HAD_NEWS_CODE);
         response->setCodeDescription(loggedUsers->at(username).getPeerFileContent());
@@ -403,13 +421,36 @@ GenericResponseMessage *Server::executeCheckNews(ClientInformation *clientInform
         loggedUsers->at(username).setPeerFileContent("");
         return response;
     }
-    else
-    {
-        response->setCode(NOTHING_NEW_CODE);
-        response->setCodeDescription(NOTHING_NEW);
-        return response;
-    }
+
+    //response->setCode(NOTHING_NEW_CODE);
+    //response->setCodeDescription(NOTHING_NEW);
+    //return response;
 }
+
+GenericResponseMessage *Server::executeUnpairRequest(ClientInformation *clientInformation, Document *document)
+{
+    GenericResponseMessage *response = new GenericResponseMessage();
+    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
+
+    // eliminate pair containing this username
+    for (auto pairsIt = pairs->cbegin(); pairsIt != pairs->cend(); pairsIt++)
+    {
+        if (0 == pairsIt->first.compare(username.c_str()))
+        {
+            pairs->erase(pairsIt);
+            break;
+        }
+        if (0 == pairsIt->second.compare(username.c_str()))
+        {
+            pairs->erase(pairsIt);
+            break;
+        }
+    }
+    response->setCode(YOU_ARE_SINGLE_CODE);
+    response->setCodeDescription(YOU_ARE_SINGLE);
+    return response;
+}
+
 
 void Server::disconnectInactiveClients()
 {
@@ -436,7 +477,6 @@ void *Server::handleDisconnecting(void *)
             {
                 // Delete username from logged users
                 loggedUsers->erase(usersIT);
-                //or usersIT->first
                 handleDisconnecting_logger->info("Server erased a client.");
 
                 // eliminate pair containing this username
@@ -492,15 +532,15 @@ void Server::printPairs()
     printf("\n");
 }
 
-bool Server::usernameIsPaired(const char* username)
+bool Server::usernameIsPaired(const char *username)
 {
     for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
     {
-        if(0 == strcmp((*constIterator).first.c_str(),username))
+        if (0 == strcmp((*constIterator).first.c_str(), username))
         {
             return true;
         }
-        if(0 == strcmp((*constIterator).second.c_str(),username))
+        if (0 == strcmp((*constIterator).second.c_str(), username))
         {
             return true;
         }
@@ -529,8 +569,7 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
         if (currentCharacter[0] == '\n')
         {
             break;
-        }
-        else
+        } else
         {
             currentCharacter[1] = '\0';
         }
@@ -570,7 +609,7 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
 
         count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
                            (size_t) bytesToReadInCurrentSession);
-        switch(count)
+        switch (count)
         {
             case -1:
             {
@@ -607,7 +646,7 @@ bool Server::sendResponseToClient(const GenericResponseMessage &response, int cl
     string jsonResponse = JsonResponseMessageGenerator::getJsonBasicResponseMessage(response);
 
     int length = (int) jsonResponse.length();
-    char *prefixedJsonResponse = (char *) malloc(sizeof(char)*(PREFIX_LENGTH + length + 1));
+    char *prefixedJsonResponse = (char *) malloc(sizeof(char) * (PREFIX_LENGTH + length + 1));
     bzero(prefixedJsonResponse, sizeof(prefixedJsonResponse));
     sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
     sendResponseToClient_logger->info("prefixedJsonResponse");
@@ -621,7 +660,7 @@ bool Server::sendResponseToClient(const GenericResponseMessage &response, int cl
     while (totalBytesLeftToSend > 0)
     {
         count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
-        switch(count)
+        switch (count)
         {
             case -1:
             {
@@ -651,16 +690,17 @@ std::string Server::getPeerUsername(std::string username)
 {
     for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
     {
-        if(0 == strcmp((*constIterator).first.c_str(),username.c_str()))
+        if (0 == strcmp((*constIterator).first.c_str(), username.c_str()))
         {
             return (*constIterator).second;
         }
-        if(0 == strcmp((*constIterator).second.c_str(),username.c_str()))
+        if (0 == strcmp((*constIterator).second.c_str(), username.c_str()))
         {
-           return (*constIterator).first ;
+            return (*constIterator).first;
 
         }
     }
     return "";
 }
+
 

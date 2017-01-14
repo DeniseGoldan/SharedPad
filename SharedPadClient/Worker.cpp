@@ -20,20 +20,28 @@ void Worker::checkInbox()
         GenericResponseMessage *response = Client::sendRequestToServer(jsonCheckRequest);
         switch(response->getCode())
         {
-            case HAD_NEWS_CODE:
-            {
-                QString temp = QString::fromStdString(response->getCodeDescription());
-                worker_logger->warn(response->getCode());
-                worker_logger->warn(response->getCodeDescription());
-                worker_logger->warn(response->getContent());
-                emit receiveFileFromPartner(temp);
-                break;
-            }
-            case NOTHING_NEW_CODE:
-            {
-                worker_logger->warn(response->getContent());
-                break;
-            }
+        case HAD_NEWS_CODE:
+        {
+            QString temp = QString::fromStdString(response->getCodeDescription());
+            worker_logger->warn(response->getCode());
+            worker_logger->warn(response->getCodeDescription());
+            worker_logger->warn(response->getContent());
+            emit receiveFileFromPartner(temp);
+            break;
+        }
+        case PAIR_ADDED_CODE:
+        {
+            QString temp = QString::fromStdString(response->getCodeDescription());
+            worker_logger->warn(response->getCode());
+            worker_logger->warn(response->getCodeDescription());
+            emit receivePeerUsername(temp);
+            break;
+        }
+        case NOTHING_NEW_CODE:
+        {
+            worker_logger->warn(response->getContent());
+            break;
+        }
         }
         sleep(2);
     }

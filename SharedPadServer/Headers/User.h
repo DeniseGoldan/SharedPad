@@ -23,7 +23,7 @@ public:
 
     void setPeerFileContent(const string &peerFileContent);
 
-    bool doeshaveFileContentFromPeer() const;
+    bool doesHaveFileContentFromPeer() const;
 
     void setHasFileContentFromPeer(bool hasFileContentFromPeer);
 
