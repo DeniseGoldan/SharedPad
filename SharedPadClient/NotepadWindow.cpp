@@ -1,7 +1,10 @@
 #include "NotepadWindow.h"
+#include "Worker.h"
 #include "ui_NotepadWindow.h"
 
 auto pair_logger = spd::stdout_color_mt("pair_logger");
+auto checkNews_logger = spd::stdout_color_mt("checkNews_logger");
+auto handleReceiverFile_logger = spd::stdout_color_mt("handleReceiverFile_logger");
 
 NotepadWindow::NotepadWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -11,7 +14,6 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
 
     connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
     connect(ui->syncronizeButton, SIGNAL(clicked()), this, SLOT (OnSyncronizeButtonPressed()));
-
 
     openAction = new QAction(tr("&Open file"), this);
     openAction->setShortcuts(QKeySequence::Open);
@@ -32,7 +34,6 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     fileMenu->addAction(saveAction);
     fileMenu->addSeparator();
     fileMenu->addAction(logoutAction);
-
 }
 
 void NotepadWindow::OnPairButtonPressed()
@@ -52,8 +53,8 @@ void NotepadWindow::OnPairButtonPressed()
         GenericResponseMessage * responseFromServer = client->pair(sender.toStdString(), peerUsername.toStdString());
         pair_logger->warn(responseFromServer->getCode());
         pair_logger->warn(responseFromServer->getCodeDescription());
-        pair_logger->warn(responseFromServer->getSender());
-        pair_logger->warn(responseFromServer->getReceiver());
+        //pair_logger->warn(responseFromServer->getSender());
+        //pair_logger->warn(responseFromServer->getReceiver());
 
         string serverResponsePeer = responseFromServer->getReceiver();
 
@@ -65,43 +66,61 @@ void NotepadWindow::OnPairButtonPressed()
 
         switch(responseFromServer->getCode())
         {
-        case PAIR_ADDED_CODE :
-        {
-            QMessageBox::information(this,"Pair approved!","You have a pair.");
-            ui->peerUsernameTag->setText(peerUsername);
-            break;
-        }
-        default:
-        {
-            QMessageBox::information(this,"Pair not approved!","Sorry...");
-            break;
-        }
+            case PAIR_ADDED_CODE :
+            {
+                QMessageBox::information(this,"Pair approved!","You have a pair.");
+                ui->peerUsernameTag->setText(peerUsername);
+                break;
+            }
+            default:
+            {
+                QMessageBox::information(this,"Pair not approved!","Sorry...");
+                break;
+            }
         }
     }
 }
-
 
 void NotepadWindow::OnSyncronizeButtonPressed()
 {
     Client * client = new Client();
-    GenericResponseMessage * responseFromServer = client->syncronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
+    GenericResponseMessage * responseFromServer = client->synchronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
 
     switch(responseFromServer->getCode())
     {
-    case YOU_ARE_SINGLE_CODE :
-    {
-        QMessageBox::information(this,"Syncronization failure","You do not have a pair.");
-        break;
+        case YOU_ARE_SINGLE_CODE :
+        {
+            QMessageBox::information(this,"Syncronization failure","You do not have a pair.");
+            break;
+        }
+        case SENT_NEWS_TO_PEER_CODE:
+        {
+            QMessageBox::information(this,"Syncronization succes","You and you peer now share the same text content.");
+            break;
+        }
     }
-    case SYNC_SUCCES_CODE:
-    {
-        QMessageBox::information(this,"Syncronization succes","You and you peer now share the same text content.");
-        break;
-    }
-    }
-
 }
 
+void NotepadWindow::check()
+{
+    QThread *thread = new QThread;
+    Worker * worker = new Worker(username.toStdString());
+
+    QObject::connect(thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    QObject::connect(thread, SIGNAL(started()), worker, SLOT(checkInbox()));
+
+    QObject::connect(worker, SIGNAL(receiveFileFromPartner(QString)),
+                     this, SLOT(handleReceiveFileFromPartner(QString)));
+
+    worker->moveToThread(thread);
+    thread->start();
+}
+
+void NotepadWindow::handleReceiveFileFromPartner(QString content)
+{
+    handleReceiverFile_logger->warn(content.toStdString());
+    ui->textEdit->setText(content);
+}
 
 void NotepadWindow::openFile(){
 
@@ -200,6 +219,7 @@ void NotepadWindow::logout(){
 void NotepadWindow::belongsTo(QString username){
     this->username = username;
     ui->usernameTag->setText(username);
+    check();
 }
 
 QString NotepadWindow::getUsername(){

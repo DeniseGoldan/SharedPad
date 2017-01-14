@@ -5,7 +5,7 @@ auto codeCorrespondsToContentlogger = spdlog::stdout_color_mt("codeCorrespondsTo
 
 JsonResponseMessageParser::JsonResponseMessageParser(){}
 
-rapidjson::Document *JsonResponseMessageParser::parseJsonMessage(const char *jsonMessage)
+Document *JsonResponseMessageParser::parseJsonMessage(const char *jsonMessage)
 {
     //This variable will exist only inside this scope, in the stack.
     Document stackDocument;
@@ -50,7 +50,7 @@ rapidjson::Document *JsonResponseMessageParser::parseJsonMessage(const char *jso
     return heapDocument;
 }
 
-bool JsonResponseMessageParser::codeCorrespondsToContent(int code, const rapidjson::Document &document){
+bool JsonResponseMessageParser::codeCorrespondsToContent(int code, const Document &document){
 
     // LOGIN
     if (code == LOGIN_APPROVED_CODE )
@@ -63,7 +63,7 @@ bool JsonResponseMessageParser::codeCorrespondsToContent(int code, const rapidjs
     }
     if (code == LOGIN_FAILED_CODE )
     {
-        std::string result = document[CODE_DESCRIPTION].GetString();
+        string result = document[CODE_DESCRIPTION].GetString();
         if (strcmp(result.c_str(), LOGIN_FAILED) !=0)
         {
             return false;

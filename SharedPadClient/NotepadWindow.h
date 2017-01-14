@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QTextStream>
+#include <QThread>
 #include <string.h>
 
 #include "TextFileEditor.h"
@@ -35,8 +36,10 @@ public:
     ~NotepadWindow();
     void belongsTo(QString username);
     QString getUsername();
+    void check();
 
-    //TextFileEditor * textFileEditor;
+public slots:
+    void handleReceiveFileFromPartner(QString content);
 
 private slots:
      void openFile();

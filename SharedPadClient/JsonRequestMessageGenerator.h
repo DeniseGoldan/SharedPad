@@ -18,9 +18,6 @@ public:
     static string getJsonLogRequestMessage(const GenericRequestMessage &message);
     static string getJsonPairRequestMessage(const GenericRequestMessage &message);
     static string getJsonSyncRequestMessage(const GenericRequestMessage &message);
-private:
 };
 
 #endif // JSONMESSAGEGENERATOR_H
-
-

@@ -2,7 +2,7 @@
 
 JsonRequestMessageGenerator::JsonRequestMessageGenerator(){}
 
-// Used for LOGIN, LOGOUT or QUERY
+// Used for LOGIN, LOGOUT, QUERY or CHECK_NEWS
 string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericRequestMessage &message){
 
     StringBuffer buffer;
@@ -130,6 +130,8 @@ string JsonRequestMessageGenerator::getJsonSyncRequestMessage(const GenericReque
     writer.EndObject();
     return buffer.GetString();
 }
+
+
 
 
 

@@ -9,8 +9,6 @@ void QuerySender::sendUpdates()
     char * argument = (char*) malloc ((1+castedArgument.length())*sizeof(char));
     strcpy(argument, castedArgument.c_str());
 
-    handleUpdating_logger->info(argument);
-
     pthread_t threadId;
     if (0 != pthread_create(&threadId, nullptr, QuerySender::handleUpdating, (void*)argument))
     {
@@ -31,8 +29,8 @@ void *QuerySender::handleUpdating(void *argument)
 
     string jsonUpdateRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(updateRequest);
 
-    while(true){
-        //GenericResponseMessage *response =
+    while(true)
+    {
         Client::sendRequestToServer(jsonUpdateRequest);
         sleep(5);
     }

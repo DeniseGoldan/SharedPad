@@ -9,6 +9,7 @@
 #include "StatusCodesAndDescriptions.h"
 
 using namespace rapidjson;
+using namespace std;
 
 
 class JsonResponseMessageParser

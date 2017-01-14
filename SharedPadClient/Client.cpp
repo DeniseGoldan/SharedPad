@@ -77,10 +77,10 @@ GenericResponseMessage*Client::pair(string sender, string receiver){
     return responseFromServer;
 }
 
-GenericResponseMessage * Client::syncronize(string username, string content)
+GenericResponseMessage * Client::synchronize(string username, string content)
 {
     GenericRequestMessage syncRequest;
-    syncRequest.setCommand(SYNCRONIZE);
+    syncRequest.setCommand(SEND_NEWS);
     syncRequest.setUsername(username);
     syncRequest.setContent(content);
 

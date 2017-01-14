@@ -69,7 +69,9 @@ private:
 
     static GenericResponseMessage *executePairRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeSyncRequest(ClientInformation *clientInformation, Document *document);
+    static GenericResponseMessage *executeSendNews(ClientInformation *clientInformation, Document *document);
+
+    static GenericResponseMessage *executeCheckNews(ClientInformation *clientInformation, Document *document);
 
     static void disconnectInactiveClients();
 
@@ -82,6 +84,8 @@ private:
     static void printPairs();
 
     static bool usernameIsPaired(const char* username);
+
+    static std::string getPeerUsername(std::string username);
 };
 
 

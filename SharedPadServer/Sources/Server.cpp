@@ -79,7 +79,7 @@ void Server::startListeningSession()
 void *Server::handleClient(void *client)
 {
     handleClient_logger->info("Inside handleClient function.");
-    handleClient_logger->info("Setting socket options SO_RCVTIMEO and SO_SNDTIMEO.");
+    //handleClient_logger->info("Setting socket options SO_RCVTIMEO and SO_SNDTIMEO.");
     struct timeval timeout;
     timeout.tv_sec = 3;
     timeout.tv_usec = 0;
@@ -94,8 +94,8 @@ void *Server::handleClient(void *client)
     }
 
     int jsonRequestLength = readJsonRequestLength(currentClient);
-    handleClient_logger->info("jsonRequestLength");
-    handleClient_logger->info(jsonRequestLength);
+    //handleClient_logger->info("jsonRequestLength");
+    //handleClient_logger->info(jsonRequestLength);
     if (jsonRequestLength == -1)
     {
         handleClient_logger->warn("jsonRequestLength == -1");
@@ -103,7 +103,7 @@ void *Server::handleClient(void *client)
         pthread_exit(nullptr);
     }
     char *jsonRequest = readJsonRequestFromClient(currentClient, jsonRequestLength);
-    handleClient_logger->info("jsonRequest:");
+    //handleClient_logger->info("jsonRequest:");
     handleClient_logger->info(jsonRequest);
     if (jsonRequest == nullptr)
     {
@@ -136,146 +136,6 @@ void *Server::handleClient(void *client)
     pthread_exit(nullptr);
 }
 
-int Server::readJsonRequestLength(const ClientInformation *currentClient)
-{
-    char *prefix = (char *) malloc(sizeof(char) * (PREFIX_LENGTH));
-    bzero(prefix, PREFIX_LENGTH);
-    strcpy(prefix, "");
-
-    char currentCharacter[2];
-    int totalBytesRead = 0, count = 0;
-
-    while (totalBytesRead < PREFIX_LENGTH)
-    {
-        count = (int) read(currentClient->clientSocketFD, currentCharacter, 1);
-        if (-1 == count)
-        {
-            pthread_detach(pthread_self());
-            readJsonRequestLength_logger->warn("Reading the request failed.\n");
-            return -1;
-        }
-        if (currentCharacter[0] == '\n')
-        {
-            break;
-        }
-        else
-        {
-            currentCharacter[1] = '\0';
-        }
-        strcat(prefix, currentCharacter);
-        totalBytesRead += count;
-    }
-
-    if (!stringContainsOnlyDigits(prefix))
-    {
-        pthread_detach(pthread_self());
-        readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.");
-        return -1;
-    }
-
-    return atoi(prefix);
-}
-
-char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, int jsonRequestLength)
-{
-    if (-1 == jsonRequestLength)
-    {
-        readJsonRequestFromClient_logger->warn("The response length is invalid.");
-        return nullptr;
-    }
-
-    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
-    char *jsonResponse = (char *) malloc((sizeof(char)) * (jsonRequestLength + 2));
-    //bzero(jsonResponse, (size_t)(jsonRequestLength + 1));
-
-    while (totalBytesLeftToRead > 0)
-    {
-        int bytesToReadInCurrentSession;
-
-        (totalBytesLeftToRead < BUFF_SIZE) ?
-                bytesToReadInCurrentSession = totalBytesLeftToRead :
-                bytesToReadInCurrentSession = BUFF_SIZE;
-
-        count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
-                           (size_t) bytesToReadInCurrentSession);
-        switch(count)
-        {
-            case -1:
-            {
-                close(currentClient->clientSocketFD);
-                readJsonRequestFromClient_logger->warn("Reading response from server failed: -1 == count");
-                return nullptr;
-            }
-            case 0:
-            {
-                close(currentClient->clientSocketFD);
-                readJsonRequestFromClient_logger->warn("Reading response from server failed: 0 == count");
-                return nullptr;
-            }
-            default:
-            {
-                totalBytesRead += count;
-                totalBytesLeftToRead -= count;
-            }
-        }
-    }
-
-    if (jsonResponse == nullptr)
-    {
-        readJsonRequestFromClient_logger->warn("Reading response from server failed.");
-        return nullptr;
-    }
-
-    return jsonResponse;
-}
-
-bool Server::sendResponseToClient(const GenericResponseMessage &response, int clientSocketFD)
-{
-    sendResponseToClient_logger->info("Inside sendResponseToClient function.");
-    string jsonResponse = JsonResponseMessageGenerator::getJsonBasicResponseMessage(response);
-
-    int length = (int) jsonResponse.length();
-    char *prefixedJsonResponse = (char *) malloc(sizeof(char)*(PREFIX_LENGTH + length + 1));
-    bzero(prefixedJsonResponse, sizeof(prefixedJsonResponse));
-    sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
-    sendResponseToClient_logger->info("prefixedJsonResponse");
-    sendResponseToClient_logger->info(prefixedJsonResponse);
-
-    sendResponseToClient_logger->info("Preparing to write the response into the socket.");
-    int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
-    int totalBytesSent = 0;
-    int count = 0;
-
-    while (totalBytesLeftToSend > 0)
-    {
-        count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
-        switch(count)
-        {
-            case -1:
-            {
-                sendResponseToClient_logger->warn("Writing response to client failed: -1 == count");
-                free(prefixedJsonResponse);
-                return false;
-            }
-            case 0:
-            {
-                sendResponseToClient_logger->warn("Writing response to client failed: 0 == count");
-                free(prefixedJsonResponse);
-                return false;
-            }
-            default:
-            {
-                totalBytesSent += count;
-                totalBytesLeftToSend -= count;
-            }
-        }
-    }
-
-    sendResponseToClient_logger->info("End of sendResponseToClient function.");
-    free(prefixedJsonResponse);
-    return true;
-}
-
 GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient, Document *document)
 {
     executeRequest_logger->info("Inside execute request");
@@ -295,6 +155,7 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
     executeRequest_logger->warn("Finding out the command's name.");
 
     char * command = (char *) malloc(500 * sizeof(char));
+    strcpy(command, "");
     strcpy(command, document->FindMember(COMMAND)->value.GetString());
 
     if (0 == strcmp(LOGIN, command))
@@ -317,9 +178,14 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
         response = executePairRequest(currentClient, document);
     }
 
-    if (0 == strcmp(SYNCRONIZE, command))
+    if (0 == strcmp(SEND_NEWS, command))
     {
-        response = executeSyncRequest(currentClient, document);
+        response = executeSendNews(currentClient, document);
+    }
+
+    if (0 == strcmp(CHECK_NEWS, command))
+    {
+        response = executeCheckNews(currentClient, document);
     }
     return response;
 
@@ -498,6 +364,53 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
     return response;
 }
 
+GenericResponseMessage *Server::executeSendNews(ClientInformation *clientInformation, Document *document)
+{
+    GenericResponseMessage *response = new GenericResponseMessage();
+
+    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
+    string content = document->FindMember(ARGUMENTS)->value[CONTENT].GetString();
+
+    if (!usernameIsPaired(username.c_str()))
+    {
+        response->setCode(YOU_ARE_SINGLE_CODE);
+        response->setCodeDescription(YOU_ARE_SINGLE);
+        return response;
+    }
+    else
+    {
+        string peerUsername = getPeerUsername(username);
+        loggedUsers->at(peerUsername).setHasFileContentFromPeer(true);
+        loggedUsers->at(peerUsername).setPeerFileContent(content);
+    }
+
+    response->setCode(SENT_NEWS_TO_PEER_CODE);
+    response->setCodeDescription(SENT_NEWS_TO_PEER);
+    return response;
+}
+
+GenericResponseMessage *Server::executeCheckNews(ClientInformation *clientInformation, Document *document)
+{
+    GenericResponseMessage *response = new GenericResponseMessage();
+    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
+
+    if (loggedUsers->at(username).doeshaveFileContentFromPeer())
+    {
+        response->setCode(HAD_NEWS_CODE);
+        response->setCodeDescription(loggedUsers->at(username).getPeerFileContent());
+        response->setContent(loggedUsers->at(username).getPeerFileContent());
+        loggedUsers->at(username).setHasFileContentFromPeer(false);
+        loggedUsers->at(username).setPeerFileContent("");
+        return response;
+    }
+    else
+    {
+        response->setCode(NOTHING_NEW_CODE);
+        response->setCodeDescription(NOTHING_NEW);
+        return response;
+    }
+}
+
 void Server::disconnectInactiveClients()
 {
     pthread_t threadId;
@@ -542,7 +455,6 @@ void *Server::handleDisconnecting(void *)
                 }
             }
         }
-
         handleDisconnecting_logger->info("Server's disconnecting service will sleep for 10 seconds.");
         sleep(10);
     }
@@ -584,34 +496,171 @@ bool Server::usernameIsPaired(const char* username)
 {
     for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
     {
-        if(0 == strcmp((*constIterator).first.c_str(),username)){
+        if(0 == strcmp((*constIterator).first.c_str(),username))
+        {
             return true;
         }
-        if(0 == strcmp((*constIterator).second.c_str(),username)){
+        if(0 == strcmp((*constIterator).second.c_str(),username))
+        {
             return true;
         }
     }
     return false;
 }
 
-GenericResponseMessage *Server::executeSyncRequest(ClientInformation *clientInformation, Document *document)
+int Server::readJsonRequestLength(const ClientInformation *currentClient)
 {
-    GenericResponseMessage *response = new GenericResponseMessage();
+    char *prefix = (char *) malloc(sizeof(char) * (PREFIX_LENGTH));
+    bzero(prefix, PREFIX_LENGTH);
+    strcpy(prefix, "");
 
-    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
-    string content = document->FindMember(ARGUMENTS)->value[CONTENT].GetString();
+    char currentCharacter[2];
+    int totalBytesRead = 0, count = 0;
 
-    if (!usernameIsPaired(username.c_str()))
+    while (totalBytesRead < PREFIX_LENGTH)
     {
-        response->setCode(YOU_ARE_SINGLE_CODE);
-        response->setCodeDescription(YOU_ARE_SINGLE);
-        return response;
+        count = (int) read(currentClient->clientSocketFD, currentCharacter, 1);
+        if (-1 == count)
+        {
+            pthread_detach(pthread_self());
+            readJsonRequestLength_logger->warn("Reading the request failed.\n");
+            return -1;
+        }
+        if (currentCharacter[0] == '\n')
+        {
+            break;
+        }
+        else
+        {
+            currentCharacter[1] = '\0';
+        }
+        strcat(prefix, currentCharacter);
+        totalBytesRead += count;
     }
 
-    // TODO :  send message to peer, so that they update the textEdit area
+    if (!stringContainsOnlyDigits(prefix))
+    {
+        pthread_detach(pthread_self());
+        readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.");
+        return -1;
+    }
 
-    response->setCode(SYNC_SUCCES_CODE);
-    response->setCodeDescription(SYNC_SUCCES);
-    return response;
+    return atoi(prefix);
+}
+
+char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, int jsonRequestLength)
+{
+    if (-1 == jsonRequestLength)
+    {
+        readJsonRequestFromClient_logger->warn("The response length is invalid.");
+        return nullptr;
+    }
+
+    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
+    char *jsonResponse = (char *) malloc((sizeof(char)) * (jsonRequestLength + 2));
+    //bzero(jsonResponse, (size_t)(jsonRequestLength + 1));
+
+    while (totalBytesLeftToRead > 0)
+    {
+        int bytesToReadInCurrentSession;
+
+        (totalBytesLeftToRead < BUFF_SIZE) ?
+                bytesToReadInCurrentSession = totalBytesLeftToRead :
+                bytesToReadInCurrentSession = BUFF_SIZE;
+
+        count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
+                           (size_t) bytesToReadInCurrentSession);
+        switch(count)
+        {
+            case -1:
+            {
+                close(currentClient->clientSocketFD);
+                readJsonRequestFromClient_logger->warn("Reading response from server failed: -1 == count");
+                return nullptr;
+            }
+            case 0:
+            {
+                close(currentClient->clientSocketFD);
+                readJsonRequestFromClient_logger->warn("Reading response from server failed: 0 == count");
+                return nullptr;
+            }
+            default:
+            {
+                totalBytesRead += count;
+                totalBytesLeftToRead -= count;
+            }
+        }
+    }
+
+    if (jsonResponse == nullptr)
+    {
+        readJsonRequestFromClient_logger->warn("Reading response from server failed.");
+        return nullptr;
+    }
+
+    return jsonResponse;
+}
+
+bool Server::sendResponseToClient(const GenericResponseMessage &response, int clientSocketFD)
+{
+    sendResponseToClient_logger->info("Inside sendResponseToClient function.");
+    string jsonResponse = JsonResponseMessageGenerator::getJsonBasicResponseMessage(response);
+
+    int length = (int) jsonResponse.length();
+    char *prefixedJsonResponse = (char *) malloc(sizeof(char)*(PREFIX_LENGTH + length + 1));
+    bzero(prefixedJsonResponse, sizeof(prefixedJsonResponse));
+    sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
+    sendResponseToClient_logger->info("prefixedJsonResponse");
+    sendResponseToClient_logger->info(prefixedJsonResponse);
+
+    sendResponseToClient_logger->info("Preparing to write the response into the socket.");
+    int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
+    int totalBytesSent = 0;
+    int count = 0;
+
+    while (totalBytesLeftToSend > 0)
+    {
+        count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
+        switch(count)
+        {
+            case -1:
+            {
+                sendResponseToClient_logger->warn("Writing response to client failed: -1 == count");
+                free(prefixedJsonResponse);
+                return false;
+            }
+            case 0:
+            {
+                sendResponseToClient_logger->warn("Writing response to client failed: 0 == count");
+                free(prefixedJsonResponse);
+                return false;
+            }
+            default:
+            {
+                totalBytesSent += count;
+                totalBytesLeftToSend -= count;
+            }
+        }
+    }
+    sendResponseToClient_logger->info("End of sendResponseToClient function.");
+    free(prefixedJsonResponse);
+    return true;
+}
+
+std::string Server::getPeerUsername(std::string username)
+{
+    for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
+    {
+        if(0 == strcmp((*constIterator).first.c_str(),username.c_str()))
+        {
+            return (*constIterator).second;
+        }
+        if(0 == strcmp((*constIterator).second.c_str(),username.c_str()))
+        {
+           return (*constIterator).first ;
+
+        }
+    }
+    return "";
 }
 

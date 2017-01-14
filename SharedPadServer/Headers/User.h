@@ -19,10 +19,19 @@ public:
 
     const timeval &getLastCheck() const;
 
+    const string &getPeerFileContent() const;
+
+    void setPeerFileContent(const string &peerFileContent);
+
+    bool doeshaveFileContentFromPeer() const;
+
+    void setHasFileContentFromPeer(bool hasFileContentFromPeer);
+
 private:
     sockaddr_in address;
     timeval lastCheck;
-
+    string peerFileContent;
+    bool hasFileContentFromPeer;
 };
 
 #endif //SHAREDPADSERVER_USER_H

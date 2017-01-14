@@ -32,14 +32,6 @@ public:
 
     void setUsername(const string &user);
 
-    const string &getIp() const;
-
-    void setIp(const string &ip);
-
-    int getPort() const;
-
-    void setPort(int port);
-
     int getLine() const;
 
     void setLine(int line);
@@ -54,8 +46,6 @@ private:
     string username;
     string sender;
     string receiver;
-    string ip;
-    int port  = -1;
     int line = -1;
     string content;
 };

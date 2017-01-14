@@ -54,7 +54,7 @@ Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage)
 bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command, const Document &document)
 {
     // LOGIN, LOGOUT or QUERY
-    if (command == LOGIN || command == LOGOUT || command == QUERY)
+    if (command == LOGIN || command == LOGOUT || command == QUERY || command == CHECK_NEWS)
     {
         if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString())
         {
@@ -75,8 +75,8 @@ bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command,
         }
     }
 
-    // SYNCRONIZE
-    if (command == SYNCRONIZE)
+    // SEND_NEWS
+    if (command == SEND_NEWS)
     {
         if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString())
         {

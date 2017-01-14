@@ -30,7 +30,7 @@ public:
     static int establishConnection();
     static GenericResponseMessage* login(string username);
     static GenericResponseMessage* pair(string sender, string receiver);
-    static GenericResponseMessage * syncronize(string username, string content);
+    static GenericResponseMessage * synchronize(string username, string content);
     static GenericResponseMessage * sendRequestToServer(string jsonRequest);
 
 
