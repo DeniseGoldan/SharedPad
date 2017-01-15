@@ -1,5 +1,5 @@
 #include "NotepadWindow.h"
-#include "Worker.h"
+#include "NewsChecker.h"
 #include "ui_NotepadWindow.h"
 
 auto pair_logger = spd::stdout_color_mt("pair_logger");
@@ -14,8 +14,8 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->textEdit->installEventFilter(this);
 
-    connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
-    connect(ui->unpairButton, SIGNAL(clicked()), this, SLOT (OnUnpairButtonPressed()));
+    connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(onPairButtonPressed()));
+    connect(ui->unpairButton, SIGNAL(clicked()), this, SLOT (onUnpairButtonPressed()));
 
     openAction = new QAction(tr("&Open file"), this);
     openAction->setShortcuts(QKeySequence::Open);
@@ -56,11 +56,11 @@ void NotepadWindow::closeEvent(QCloseEvent *event)
 {
     if (okToContinue())
     {
-        GenericRequestMessage logoutRequest;
+        GenericRequest logoutRequest;
         logoutRequest.setCommand(LOGOUT);
         logoutRequest.setUsername(username.toStdString());
-        string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(logoutRequest);
-        Client::sendRequestToServer(jsonLogoutRequest);
+        string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(logoutRequest);
+        Client::sendRequest(jsonLogoutRequest);
         exit(EXIT_SUCCESS);
     }
     event->ignore();
@@ -73,7 +73,6 @@ bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
         if (keyEvent->matches(QKeySequence::SelectAll) || keyEvent->matches(QKeySequence::Copy) || keyEvent->matches(QKeySequence::Paste))
         {
-            // Do nothing
             return true;
         }
         else
@@ -81,7 +80,7 @@ bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
             if (keyEvent->text().length() != 0)
             {
                 sync_logger->warn(keyEvent->text().toStdString().c_str());
-                Client::synchronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
+                Client::sendNews(username.toStdString(), ui->textEdit->toPlainText().toStdString());
                 return QWidget::eventFilter(object,event);
             }
         }
@@ -89,7 +88,7 @@ bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
     return false;
 }
 
-void NotepadWindow::OnPairButtonPressed()
+void NotepadWindow::onPairButtonPressed()
 {
     QString sender = ui->usernameTag->text();
     QString peerUsername =  ui->peerSelectLineEdit->text();
@@ -103,7 +102,7 @@ void NotepadWindow::OnPairButtonPressed()
     else
     {
         Client * client = new Client();
-        GenericResponseMessage * responseFromServer = client->pair(sender.toStdString(), peerUsername.toStdString());
+        GenericResponse * responseFromServer = client->pair(sender.toStdString(), peerUsername.toStdString());
         pair_logger->warn(responseFromServer->getCode());
         pair_logger->warn(responseFromServer->getCodeDescription());
 
@@ -138,7 +137,7 @@ void NotepadWindow::OnPairButtonPressed()
     //}
 }
 
-void NotepadWindow::OnUnpairButtonPressed()
+void NotepadWindow::onUnpairButtonPressed()
 {
     QMessageBox confirm;
     confirm.setText(tr("You are going to unpair from your collaborator. Do you wish to proceed?"));
@@ -150,12 +149,12 @@ void NotepadWindow::OnUnpairButtonPressed()
         return;
     }
 
-    GenericRequestMessage unpairRequest;
+    GenericRequest unpairRequest;
     unpairRequest.setCommand(UNPAIR);
     unpairRequest.setUsername(username.toStdString());
 
-    string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(unpairRequest);
-    Client::sendRequestToServer(jsonLogoutRequest);
+    string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(unpairRequest);
+    Client::sendRequest(jsonLogoutRequest);
 
     ui->peerUsernameTag->setText("");
 }
@@ -163,19 +162,19 @@ void NotepadWindow::OnUnpairButtonPressed()
 void NotepadWindow::check()
 {
     QThread *thread = new QThread;
-    Worker * worker = new Worker(username.toStdString());
+    NewsChecker * worker = new NewsChecker(username.toStdString());
 
     QObject::connect(thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
     QObject::connect(thread, SIGNAL(started()), worker, SLOT(checkInbox()));
 
-    QObject::connect(worker, SIGNAL(receiveFileFromPartner(QString)), this, SLOT(handleReceiveFileFromPartner(QString)));
+    QObject::connect(worker, SIGNAL(receiveNewsFromPeer(QString)), this, SLOT(handleReceiveNewsFromPeer(QString)));
     QObject::connect(worker, SIGNAL(receivePeerUsername(QString)), this, SLOT(handleReceivePeerUsername(QString)));
 
     worker->moveToThread(thread);
     thread->start();
 }
 
-void NotepadWindow::handleReceiveFileFromPartner(QString content)
+void NotepadWindow::handleReceiveNewsFromPeer(QString content)
 {
     //handleReceiverFile_logger->warn(content.toStdString());
     ui->textEdit->setText(content);
@@ -271,18 +270,18 @@ void NotepadWindow::logout(){
         }
     }
 
-    GenericRequestMessage logoutRequest;
+    GenericRequest logoutRequest;
     logoutRequest.setCommand(LOGOUT);
     logoutRequest.setUsername(username.toStdString());
 
-    string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(logoutRequest);
-    Client::sendRequestToServer(jsonLogoutRequest);
+    string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(logoutRequest);
+    Client::sendRequest(jsonLogoutRequest);
 
     this->hide();
     exit(EXIT_SUCCESS);
 }
 
-void NotepadWindow::belongsTo(QString username){
+void NotepadWindow::setUsername(QString username){
     this->username = username;
     ui->usernameTag->setText(username);
     check();

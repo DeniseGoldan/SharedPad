@@ -22,6 +22,7 @@
 
 #include "Server.h"
 #include "GenericResponse.h"
+#include "SpecializedResponse.h"
 #include "JsonResponseGenerator.h"
 #include "JsonRequestParser.h"
 #include "ErrorHandler.h"
@@ -93,40 +94,22 @@ private:
 
     static void printPairs();
 
-    static sockaddr_in serverConfiguration;
+    // Members
+
+    static sockaddr_in configuration;
     static const char *ip;
     static const in_port_t port;
 
     static map<string, User> *loggedUsers;
     static map<string, string> *pairs;
 
+    // Miscellaneous
+    static GenericResponse *getResponseBasedOnCommand(const Document *document, const char *command);
+
     static GenericResponse *handleIncorrectRequest();
 
     static void *terminateThread();
 
-    static GenericResponse *getLoginFailedResponse();
-
-    static GenericResponse *getLoginApprovedResponse();
-
-    static GenericResponse *getLogoutApprovedResponse();
-
-    static GenericResponse *getUnknownResponse();
-
-    static GenericResponse *getResponseBasedOnCommand(const Document *document, const char *command);
-
-    static GenericResponse *getUserNotLoggedInResponse();
-
-    static GenericResponse *getHeartBeatApprovedResponse();
-
-    static GenericResponse *getPairAddedResponse();
-
-    static GenericResponse *getAlreadyPairedResponse();
-
-    static GenericResponse *getInvitedYourselfResponse();
-
-    static GenericResponse *getYourAreSingleResponse();
-
-    static GenericResponse *getSentNewsToPeerResponse();
 };
 
 

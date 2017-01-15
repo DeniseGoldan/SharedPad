@@ -3,7 +3,6 @@
 
 const int PREFIX_LENGTH = 10;
 const int BUFF_SIZE = 256; // 2^8
-const int MAX_COMM_NAME_LEN = 40;
 //CONNECTION
 const char *const CONNECTION_FAILED = "connection_failed";
 const int CONNECTION_FAILED_CODE = 400;
@@ -61,9 +60,6 @@ const char *const SENT_NEWS_TO_PEER = "sent_news_to_peer";
 const int SENT_NEWS_TO_PEER_CODE = 204;
 //CHECK NEWS
 const char *const CHECK_NEWS = "check_news";
-const char *const HAD_NEWS = "had_news";
 const int HAD_NEWS_CODE = 205;
-const char * const NOTHING_NEW = "nothing_new";
-const int NOTHING_NEW_CODE = 206;
 
 #endif //NAMESPACESPP_H

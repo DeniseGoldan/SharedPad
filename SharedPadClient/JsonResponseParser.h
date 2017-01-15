@@ -1,5 +1,5 @@
-#ifndef JSONRESPONSEMESSAGEPARSER_H
-#define JSONRESPONSEMESSAGEPARSER_H
+#ifndef CLIENT_JSON_RESPONSE_GENERATOR_H
+#define CLIENT_JSON_RESPONSE_GENERATOR_H
 
 #include <string.h>
 
@@ -12,14 +12,14 @@ using namespace rapidjson;
 using namespace std;
 
 
-class JsonResponseMessageParser
+class JsonResponseParser
 {
 public:
-    JsonResponseMessageParser();
+    JsonResponseParser();
     static Document * parseJsonMessage(const char * jsonMessage);
 
 private:
-    static bool codeCorrespondsToContent(int code, const Document &document);
+    static bool codeMatchesContent(int code, const Document &document);
 };
 
-#endif // JSONRESPONSEMESSAGEPARSER_H
+#endif // CLIENT_JSON_RESPONSE_GENERATOR_H

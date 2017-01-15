@@ -6,14 +6,14 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
 {
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
-
     writer.StartObject();
 
     writer.Key(CODE);
     if (-1 == response.getCode())
     {
         writer.Null();
-    } else
+    }
+    else
     {
         writer.Int(response.getCode());
     }
@@ -22,7 +22,8 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
     if (response.getCodeDescription().empty())
     {
         writer.Null();
-    } else
+    }
+    else
     {
         writer.String(response.getCodeDescription().c_str());
     }

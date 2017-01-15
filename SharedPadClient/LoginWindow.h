@@ -1,12 +1,12 @@
-#ifndef LOGINWINDOW_H
-#define LOGINWINDOW_H
+#ifndef CLIENT_LOGINWINDOW_H
+#define CLIENT_LOGINWINDOW_H
 
 #include <QMainWindow>
 #include <QMessageBox>
 
 #include "Client.h"
 #include "NotepadWindow.h"
-#include "QuerySender.h"
+#include "HeartBeatSender.h"
 
 namespace Ui {
 class LoginWindow;
@@ -21,11 +21,11 @@ public:
     ~LoginWindow();
 
 private slots:
-    void OnLoginButtonPressed();
+    void onLoginButtonPressed();
 
 private:
     Ui::LoginWindow *ui;
     NotepadWindow *notepadWindow;
 };
 
-#endif // LOGINWINDOW_H
+#endif // CLIENT_LOGINWINDOW_H

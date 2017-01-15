@@ -13,17 +13,18 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-    GenericRequestMessage.cpp \
-    GenericResponseMessage.cpp \
-    JsonResponseMessageParser.cpp \
-    JsonRequestMessageGenerator.cpp \
     spdlog/fmt/bundled/format.cc \
     spdlog/fmt/bundled/ostream.cc \
     LoginWindow.cpp \
     NotepadWindow.cpp \
-    QuerySender.cpp \
     Client.cpp \
-    Worker.cpp
+    GenericResponse.cpp \
+    GenericRequest.cpp \
+    JsonRequestGenerator.cpp \
+    JsonResponseParser.cpp \
+    HeartBeatSender.cpp \
+    NewsChecker.cpp \
+    SpecializedRequest.cpp
 
 HEADERS  += \
     rapidjson/error/en.h \
@@ -55,10 +56,6 @@ HEADERS  += \
     rapidjson/reader.h \
     rapidjson/stringbuffer.h \
     rapidjson/writer.h \
-    GenericRequestMessage.h \
-    GenericResponseMessage.h \
-    JsonResponseMessageParser.h \
-    JsonRequestMessageGenerator.h \
     rapidjson/internal/regex.h \
     rapidjson/fwd.h \
     rapidjson/istreamwrapper.h \
@@ -102,9 +99,14 @@ HEADERS  += \
     LoginWindow.h \
     NotepadWindow.h \
     StatusCodesAndDescriptions.h \
-    QuerySender.h \
     Client.h \
-    Worker.h
+    HeartBeatSender.h \
+    JsonRequestGenerator.h \
+    JsonResponseParser.h \
+    GenericRequest.h \
+    GenericResponse.h \
+    NewsChecker.h \
+    SpecializedRequest.h
 
 FORMS    += \
     LoginWindow.ui \

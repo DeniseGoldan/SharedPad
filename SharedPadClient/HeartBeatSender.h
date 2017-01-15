@@ -1,31 +1,33 @@
-#ifndef QUERYSENDER_H
-#define QUERYSENDER_H
+#ifndef CLIENT_HEART_BEAT_SENDER_H
+#define CLIENT_HEART_BEAT_SENDER_H
 
 #include<QString>
 
 #include <string>
 #include <pthread.h>
 
-#include "GenericRequestMessage.h"
-#include "GenericResponseMessage.h"
-#include "JsonRequestMessageGenerator.h"
+#include "GenericRequest.h"
+#include "GenericResponse.h"
+#include "JsonRequestGenerator.h"
 #include "StatusCodesAndDescriptions.h"
 #include "Client.h"
 
 using namespace std;
 
-class QuerySender
+class HeartBeatSender
 {
 public:
-    QuerySender();
+    HeartBeatSender();
     QString getUsername() const;
     void setUsername(QString &value);
     void sendUpdates();
     static void *handleUpdating(void *username);
+
+    static GenericRequest *getHeartBeatRequest(string username);
 
 private:
     QString username;
 
 };
 
-#endif // QUERYSENDER_H
+#endif // CLIENT_HEART_BEAT_SENDER_H

@@ -14,17 +14,15 @@ public:
 
     int getCode() const;
 
-    const string &getCodeDescription() const;
-
     void setCode(int code);
+
+    const string &getCodeDescription() const;
 
     void setCodeDescription(const string &codeDescription);
 
     const string &getSender() const;
 
     const string &getReceiver() const;
-
-    void setReceiver(const string &receiver);
 
     const string &getUsername() const;
 

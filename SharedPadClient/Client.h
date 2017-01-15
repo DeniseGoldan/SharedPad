@@ -12,11 +12,12 @@
 #include "rapidjson/document.h"
 #include "spdlog/spdlog.h"
 
-#include "JsonResponseMessageParser.h"
-#include "JsonRequestMessageGenerator.h"
-#include "GenericRequestMessage.h"
-#include "GenericResponseMessage.h"
+#include "JsonResponseParser.h"
+#include "JsonRequestGenerator.h"
+#include "GenericRequest.h"
+#include "GenericResponse.h"
 #include "StatusCodesAndDescriptions.h"
+#include "SpecializedRequest.h"
 
 namespace spd = spdlog;
 using namespace rapidjson;
@@ -26,19 +27,30 @@ class Client
 {
 public:
     Client();
-    static int establishConnection();
-    static GenericResponseMessage* login(string username);
-    static GenericResponseMessage* pair(string sender, string receiver);
-    static GenericResponseMessage* synchronize(string username, string content);
-    static GenericResponseMessage* sendRequestToServer(string jsonRequest);
+
+    static GenericResponse* login(string username);
+
+    static GenericResponse* pair(string sender, string receiver);
+
+    static GenericResponse* sendNews(string username, string content);
+
+    static GenericResponse* sendRequest(string jsonRequest);
+
+    static GenericResponse* getWriteFailedResponse();
+
+    static GenericResponse* getConnectionFailedResponse();
+
+    static GenericResponse* getJsonParsingFailedResponse();
 
 private:
     static sockaddr_in serverConfiguration;
     static const char * ip;
     static const in_port_t port;
 
-    static int readJsonResponseLengthFromServer(int socketFD);
-    static char *readJsonResponseFromServer(int socketFD, int jsonRequestLength);
+    static int readJsonResponseLength(int socketFD);
+
+    static char *readJsonResponse(int socketFD, int jsonRequestLength);
+
     static bool stringContainsOnlyDigits(char *string);
 
 };

@@ -10,14 +10,14 @@ Worker::~Worker() {}
 
 void Worker::checkInbox()
 {
-    GenericRequestMessage checkRequest;
+    GenericRequest checkRequest;
     checkRequest.setCommand(CHECK_NEWS);
     checkRequest.setUsername(username);
     string jsonCheckRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(checkRequest);
 
     while (1)
     {
-        GenericResponseMessage *response = Client::sendRequestToServer(jsonCheckRequest);
+        GenericResponse *response = Client::sendRequestToServer(jsonCheckRequest);
         switch(response->getCode())
         {
         case HAD_NEWS_CODE:

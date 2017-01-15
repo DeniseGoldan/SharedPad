@@ -1,16 +1,16 @@
-#ifndef GENERICREQUESTMESSAGE_H
-#define GENERICREQUESTMESSAGE_H
+#ifndef CLIENT_GENERIC_REQUEST_H
+#define CLIENT_GENERIC_REQUEST_H
 
 #include <string>
 
 using namespace std;
 
-class GenericRequestMessage
+class GenericRequest
 {
 public:
-    GenericRequestMessage();
+    GenericRequest();
 
-    ~GenericRequestMessage();
+    ~GenericRequest();
 
     void setCommand(const string &command);
 
@@ -47,4 +47,4 @@ private:
 
 };
 
-#endif  // GENERICREQUESTMESSAGE_H
+#endif  // CLIENT_GENERIC_REQUEST_H

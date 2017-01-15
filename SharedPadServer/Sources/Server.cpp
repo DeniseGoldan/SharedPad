@@ -1,6 +1,6 @@
 #include "../Headers/Server.h"
 
-sockaddr_in Server::serverConfiguration;
+sockaddr_in Server::configuration;
 const char *Server::ip = "127.0.0.1";
 const in_port_t Server::port = 2024;
 map<string, User> *Server::loggedUsers;
@@ -18,10 +18,10 @@ auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
 
 Server::Server()
 {
-    memset(&serverConfiguration, 0, sizeof(struct sockaddr_in));
-    serverConfiguration.sin_family = AF_INET;
-    inet_aton(ip, &serverConfiguration.sin_addr);
-    serverConfiguration.sin_port = htons(port);
+    memset(&configuration, 0, sizeof(struct sockaddr_in));
+    configuration.sin_family = AF_INET;
+    inet_aton(ip, &configuration.sin_addr);
+    configuration.sin_port = htons(port);
 
     loggedUsers = new map<string, User>();
     pairs = new map<string, string>();
@@ -36,23 +36,19 @@ void Server::startListeningSession()
     {
         ErrorHandler::exitFailure("CRITICAL - Socket creation failed.\n");
     }
-
     int enable = 1;
     if (-1 == setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, &enable, (socklen_t) sizeof(enable)))
     {
         ErrorHandler::exitFailure("CRITICAL - Setting SO_REUSEADDR failed.\n");
     }
-
-    if (-1 == bind(serverSocketFD, (const sockaddr *) &serverConfiguration, sizeof(sockaddr)))
+    if (-1 == bind(serverSocketFD, (const sockaddr *) &configuration, sizeof(sockaddr)))
     {
         ErrorHandler::exitFailure("CRITICAL - Binding failed.\n");
     }
-
     if (-1 == listen(serverSocketFD, SOMAXCONN))
     {
         ErrorHandler::exitFailure("CRITICAL - Listening failed.\n");
     }
-
     while (true)
     {
         ClientInformation *currentClient = new ClientInformation();
@@ -64,7 +60,6 @@ void Server::startListeningSession()
             startListeningSession_logger->warn("Accepting client failed.");
             continue;
         }
-
         pthread_t threadId;
         if (0 != pthread_create(&threadId, nullptr, Server::handleClient, (void *) currentClient))
         {
@@ -137,39 +132,22 @@ GenericResponse *Server::executeGenericRequest(const Document *document)
         executeRequest_logger->warn("Parsing the request failed.");
         return handleIncorrectRequest();
     }
-
     executeRequest_logger->warn("Determining the actual command.");
     char *command = (char *) malloc(500 * sizeof(char));
     strcpy(command, document->FindMember(COMMAND)->value.GetString());
-
     return getResponseBasedOnCommand(document, command);
 }
 
 GenericResponse *Server::getResponseBasedOnCommand(const Document *document, const char *command)
 {
     if (0 == strcmp(LOGIN, command)) { return executeLoginRequest(document); }
-
     if (0 == strcmp(LOGOUT, command)) { return executeLogoutRequest(document); }
-
     if (0 == strcmp(HEARTBEAT, command)) { return executeHeartbeatConfirmation(document); }
-
     if (0 == strcmp(PAIR, command)) { return executePairRequest(document); }
-
     if (0 == strcmp(UNPAIR, command)) { return executeUnpairRequest(document); }
-
     if (0 == strcmp(SEND_NEWS, command)) { return executeSendNewsRequest(document); }
-
     if (0 == strcmp(CHECK_NEWS, command)) { return executeCheckNewsRequest(document); }
-
-    return getUnknownResponse();
-}
-
-GenericResponse *Server::getUnknownResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(UNKNOWN_CODE);
-    response->setCodeDescription(UNKNOWN);
-    return response;
+    return SpecializedResponse::getUnknownResponse();
 }
 
 /**
@@ -186,28 +164,12 @@ GenericResponse *Server::executeLoginRequest(const Document *document)
     {
         User *newUserInformation = new User();
         loggedUsers->insert(pair<string, User>(username, *newUserInformation));
-        return getLoginApprovedResponse();
+        return SpecializedResponse::getLoginApprovedResponse();
     }
     else
     {
-        return getLoginFailedResponse();
+        return SpecializedResponse::getLoginFailedResponse();
     }
-}
-
-GenericResponse *Server::getLoginApprovedResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(LOGIN_APPROVED_CODE);
-    response->setCodeDescription(LOGIN_APPROVED);
-    return response;
-}
-
-GenericResponse *Server::getLoginFailedResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(LOGIN_FAILED_CODE);
-    response->setCodeDescription(LOGIN_FAILED);
-    return response;
 }
 
 /**
@@ -221,15 +183,7 @@ GenericResponse *Server::executeLogoutRequest(const Document *document)
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     loggedUsers->erase(username);
     removePairContainingUsername(username);
-    return getLogoutApprovedResponse();
-}
-
-GenericResponse *Server::getLogoutApprovedResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(LOGOUT_APPROVED_CODE);
-    response->setCodeDescription(LOGOUT_APPROVED);
-    return response;
+    return SpecializedResponse::getLogoutApprovedResponse();
 }
 
 /**
@@ -244,10 +198,9 @@ GenericResponse *Server::getLogoutApprovedResponse()
 GenericResponse *Server::executeHeartbeatConfirmation(const Document *document)
 {
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
-
     if (loggedUsers->find(username) == loggedUsers->cend())
     {
-        return getUserNotLoggedInResponse();
+        return SpecializedResponse::getUserNotLoggedInResponse();
     }
     else
     {
@@ -257,24 +210,8 @@ GenericResponse *Server::executeHeartbeatConfirmation(const Document *document)
         heartbeat_logger->warn("heartbeat");
         heartbeat_logger->warn(username);
 
-        return getHeartBeatApprovedResponse();
+        return SpecializedResponse::getHeartBeatApprovedResponse();
     }
-}
-
-GenericResponse *Server::getHeartBeatApprovedResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(HEARTBEAT_APPROVED_CODE);
-    response->setCodeDescription(HEARTBEAT_APPROVED);
-    return response;
-}
-
-GenericResponse *Server::getUserNotLoggedInResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(USER_NOT_LOGGED_IN_CODE);
-    response->setCodeDescription(USER_NOT_LOGGED_IN);
-    return response;
 }
 
 /**
@@ -296,7 +233,7 @@ GenericResponse *Server::executePairRequest(const Document *document)
             if (0 == sender.compare(receiver))
             {
                 pairRequest_logger->warn("Sender is the same as receiver");
-                return getInvitedYourselfResponse();
+                return SpecializedResponse::getInvitedYourselfResponse();
             }
             else
             {
@@ -304,7 +241,7 @@ GenericResponse *Server::executePairRequest(const Document *document)
                 if (usernameIsPaired(sender.c_str()) || usernameIsPaired(receiver.c_str()))
                 {
                     pairRequest_logger->warn("Sender or receiver already paired");
-                    return getAlreadyPairedResponse();
+                    return SpecializedResponse::getAlreadyPairedResponse();
                 }
                 else
                 {
@@ -313,7 +250,7 @@ GenericResponse *Server::executePairRequest(const Document *document)
                     {
                         pairRequest_logger->info("New pair added");
                         pairs->insert(pair<string, string>(sender, receiver));
-                        return getPairAddedResponse();
+                        return SpecializedResponse::getPairAddedResponse();
                     }
                 }
             }
@@ -321,38 +258,14 @@ GenericResponse *Server::executePairRequest(const Document *document)
         else
         {
             pairRequest_logger->info("receiver not logged in");
-            return getUserNotLoggedInResponse();
+            return SpecializedResponse::getUserNotLoggedInResponse();
         }
     }
     else
     {
         pairRequest_logger->info("sender not logged in");
-        return getUserNotLoggedInResponse();
+        return SpecializedResponse::getUserNotLoggedInResponse();
     }
-}
-
-GenericResponse *Server::getInvitedYourselfResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(INVITED_YOURSELF_CODE);
-    response->setCodeDescription(INVITED_YOURSELF);
-    return response;
-}
-
-GenericResponse *Server::getAlreadyPairedResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(ALREADY_PAIRED_CODE);
-    response->setCodeDescription(ALREADY_PAIRED);
-    return response;
-}
-
-GenericResponse *Server::getPairAddedResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(PAIR_ADDED_CODE);
-    response->setCodeDescription(PAIR_ADDED);
-    return response;
 }
 
 /**
@@ -364,15 +277,7 @@ GenericResponse *Server::executeUnpairRequest(const Document *document)
 {
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     removePairContainingUsername(username);
-    return getYourAreSingleResponse();
-}
-
-GenericResponse *Server::getYourAreSingleResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(YOU_ARE_SINGLE_CODE);
-    response->setCodeDescription(YOU_ARE_SINGLE);
-    return response;
+    return SpecializedResponse::getYourAreSingleResponse();
 }
 
 /**
@@ -384,26 +289,17 @@ GenericResponse *Server::executeSendNewsRequest(const Document *document)
 {
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     string content = document->FindMember(ARGUMENTS)->value[CONTENT].GetString();
-
     if (!usernameIsPaired(username.c_str()))
     {
-        return getYourAreSingleResponse();
+        return SpecializedResponse::getYourAreSingleResponse();
     }
     else
     {
         string peerUsername = getPeerUsername(username);
         loggedUsers->at(peerUsername).setHasFileContentFromPeer(true);
         loggedUsers->at(peerUsername).setPeerFileContent(content);
-        return getSentNewsToPeerResponse();
+        return SpecializedResponse::getSentNewsToPeerResponse();
     }
-}
-
-GenericResponse *Server::getSentNewsToPeerResponse()
-{
-    GenericResponse *response = new GenericResponse();
-    response->setCode(SENT_NEWS_TO_PEER_CODE);
-    response->setCodeDescription(SENT_NEWS_TO_PEER);
-    return response;
 }
 
 /**
@@ -416,7 +312,6 @@ GenericResponse *Server::executeCheckNewsRequest(const Document *document)
 {
     GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
-
     if (!loggedUsers->at(username).doesHaveFileContentFromPeer())
     {
         if (usernameIsPaired(username.c_str()))
@@ -462,14 +357,8 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
             readJsonRequestLength_logger->warn("Reading the request failed.\n");
             return -1;
         }
-        if (currentCharacter[0] == '\n')
-        {
-            break;
-        }
-        else
-        {
-            currentCharacter[1] = '\0';
-        }
+        if (currentCharacter[0] == '\n') { break; }
+        else { currentCharacter[1] = '\0'; }
         strcat(prefix, currentCharacter);
         totalBytesRead += count;
     }
@@ -480,7 +369,6 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
         readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.");
         return -1;
     }
-
     return atoi(prefix);
 }
 
@@ -529,13 +417,11 @@ char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRe
             }
         }
     }
-
     if (jsonResponse == nullptr)
     {
         readJsonRequestFromClient_logger->warn("Reading failed.");
         return nullptr;
     }
-
     return jsonResponse;
 }
 
@@ -599,15 +485,13 @@ void Server::startDisconnectingService()
 void *Server::handleDisconnecting(void *)
 {
     handleDisconnecting_logger->info("Inside function handleDisconnecting.");
-
     while (true)
     {
         printLoggedUsers();
         printPairs();
         for (auto usersIT = loggedUsers->cbegin(); usersIT != loggedUsers->cend(); usersIT++)
         {
-            timeval now;
-            gettimeofday(&now, NULL);
+            timeval now; gettimeofday(&now, NULL);
             if (now.tv_sec - usersIT->second.getLastCheck().tv_sec > 10)
             {
                 loggedUsers->erase(usersIT);

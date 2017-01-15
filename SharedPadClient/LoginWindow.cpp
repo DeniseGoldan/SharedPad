@@ -6,7 +6,7 @@ LoginWindow::LoginWindow(QWidget *parent) :
     ui(new Ui::LoginWindow)
 {
     ui->setupUi(this);
-    connect(ui->loginButton, SIGNAL(clicked()), this, SLOT(OnLoginButtonPressed()));
+    connect(ui->loginButton, SIGNAL(clicked()), this, SLOT(onLoginButtonPressed()));
 }
 
 LoginWindow::~LoginWindow()
@@ -14,7 +14,7 @@ LoginWindow::~LoginWindow()
     delete ui;
 }
 
-void LoginWindow::OnLoginButtonPressed()
+void LoginWindow::onLoginButtonPressed()
 {
     QString username =  ui->usernameLineEdit->text();
     if (username.isEmpty())
@@ -24,24 +24,24 @@ void LoginWindow::OnLoginButtonPressed()
     else
     {
         Client * client = new Client();
-        GenericResponseMessage * responseFromServer = client->login(username.toStdString());
+        GenericResponse * responseFromServer = client->login(username.toStdString());
         switch(responseFromServer->getCode())
         {
-            case LOGIN_FAILED_CODE :
-            {
-                QMessageBox::critical(this,"Login failed!","The username you provided is already registered.");
-                break;
-            }
-            case LOGIN_APPROVED_CODE :
-            {
-                notepadWindow = new NotepadWindow(this);
-                notepadWindow->belongsTo(username);
-                notepadWindow->show();
-                QuerySender *sender = new QuerySender();
-                sender->setUsername(username);
-                sender->sendUpdates();
-                break;
-            }
+        case LOGIN_FAILED_CODE :
+        {
+            QMessageBox::critical(this,"Login failed!","The username you provided is already registered.");
+            break;
+        }
+        case LOGIN_APPROVED_CODE :
+        {
+            notepadWindow = new NotepadWindow(this);
+            notepadWindow->setUsername(username);
+            notepadWindow->show();
+            HeartBeatSender *sender = new HeartBeatSender();
+            sender->setUsername(username);
+            sender->sendUpdates();
+            break;
+        }
         case CONNECTION_FAILED_CODE:
         {
             QMessageBox::critical(this,"Error","Server failed.");

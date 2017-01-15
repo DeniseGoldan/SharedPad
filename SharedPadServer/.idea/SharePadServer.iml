@@ -2,6 +2,7 @@
 <module type="CPP_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/Headers/SpecializedResponse.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/ClientInformation.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/StatusCodesAndDescriptions.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/JsonRequestParser.h" isTestSource="false" />
@@ -10,11 +11,12 @@
       <sourceFolder url="file://$MODULE_DIR$/Headers/User.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/JsonResponseGenerator.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/GenericResponse.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Sources/Server.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Sources/SpecializedResponse.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/GenericResponse.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/main.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/ErrorHandler.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/JsonResponseGenerator.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Sources/Server.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/ClientInformation.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/User.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/JsonRequestParser.cpp" isTestSource="false" />

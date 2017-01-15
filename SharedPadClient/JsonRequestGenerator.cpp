@@ -1,14 +1,13 @@
-#include "JsonRequestMessageGenerator.h"
+#include "JsonRequestGenerator.h"
 
-JsonRequestMessageGenerator::JsonRequestMessageGenerator(){}
+JsonRequestGenerator::JsonRequestGenerator(){}
 
 // Used for LOGIN, LOGOUT, QUERY or CHECK_NEWS
-string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericRequestMessage &message){
-
+string JsonRequestGenerator::getJsonLogRequest(const GenericRequest &message)
+{
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     writer.StartObject();
-
     // This object contains a COMMAND and its ARGUMENTS, organized into 2 distinct blocks
     writer.Key(COMMAND);
     if (message.getCommand().empty())
@@ -19,7 +18,6 @@ string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericReques
     {
         writer.String(message.getCommand().c_str());
     }
-
     // The ARGUMNETS block may have its own blocks, USERNAME in this case
     writer.Key(ARGUMENTS);
     writer.StartObject();
@@ -32,20 +30,17 @@ string JsonRequestMessageGenerator::getJsonLogRequestMessage(const GenericReques
     {
         writer.String(message.getUsername().c_str());
     }
-
     // Ending the ARGUMENTS block
     writer.EndObject();
-
     writer.EndObject();
     return buffer.GetString();
 }
 
-
-string JsonRequestMessageGenerator::getJsonPairRequestMessage(const GenericRequestMessage &message){
+string JsonRequestGenerator::getJsonPairRequest(const GenericRequest &message)
+{
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     writer.StartObject();
-
     // This object contains a COMMAND and its ARGUMENTS, organized into 2 distinct blocks
     writer.Key(COMMAND);
     if (message.getCommand().empty())
@@ -56,7 +51,6 @@ string JsonRequestMessageGenerator::getJsonPairRequestMessage(const GenericReque
     {
         writer.String(message.getCommand().c_str());
     }
-
     // The ARGUMNETS block may have its own blocks, SENDER and RECEIVER in this case
     writer.Key(ARGUMENTS);
     writer.StartObject();
@@ -78,19 +72,17 @@ string JsonRequestMessageGenerator::getJsonPairRequestMessage(const GenericReque
     {
         writer.String(message.getReceiver().c_str());
     }
-
     // Ending the ARGUMENTS block
     writer.EndObject();
-
     writer.EndObject();
     return buffer.GetString();
 }
 
-string JsonRequestMessageGenerator::getJsonSyncRequestMessage(const GenericRequestMessage &message){
+string JsonRequestGenerator::getJsonSyncRequest(const GenericRequest &message)
+{
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     writer.StartObject();
-
     // This object contains a COMMAND and its ARGUMENTS, organized into 2 distinct blocks
     writer.Key(COMMAND);
     if (message.getCommand().empty())
@@ -101,7 +93,6 @@ string JsonRequestMessageGenerator::getJsonSyncRequestMessage(const GenericReque
     {
         writer.String(message.getCommand().c_str());
     }
-
     // The ARGUMNETS block may have its own blocks, SENDER and RECEIVER in this case
     writer.Key(ARGUMENTS);
     writer.StartObject();
@@ -123,10 +114,8 @@ string JsonRequestMessageGenerator::getJsonSyncRequestMessage(const GenericReque
     {
         writer.String(message.getContent().c_str());
     }
-
     // Ending the ARGUMENTS block
     writer.EndObject();
-
     writer.EndObject();
     return buffer.GetString();
 }

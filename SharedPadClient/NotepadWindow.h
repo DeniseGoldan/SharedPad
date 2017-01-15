@@ -1,5 +1,5 @@
-#ifndef NOTEPADWINDOW_H
-#define NOTEPADWINDOW_H
+#ifndef CLIENT_NOTEPADWINDOW_H
+#define CLIENT_NOTEPADWINDOW_H
 
 #include <QMainWindow>
 #include <QMessageBox>
@@ -14,8 +14,8 @@
 #include <QThread>
 #include <string.h>
 
-#include "GenericRequestMessage.h"
-#include "JsonRequestMessageGenerator.h"
+#include "GenericRequest.h"
+#include "JsonRequestGenerator.h"
 #include "StatusCodesAndDescriptions.h"
 #include "Client.h"
 
@@ -37,31 +37,31 @@ class NotepadWindow : public QMainWindow
 public:
     explicit NotepadWindow(QWidget *parent = 0);
     ~NotepadWindow();
-    void belongsTo(QString username);
     QString getUsername();
+    void setUsername(QString username);
     void check();
     bool eventFilter(QObject *object, QEvent *event);
     bool okToContinue();
     void closeEvent(QCloseEvent *event);
 
 public slots:
-    void handleReceiveFileFromPartner(QString content);
+    void handleReceiveNewsFromPeer(QString news);
     void handleReceivePeerUsername(QString peerUsername);
 
 private slots:
      void openFile();
      void saveFile();
      void logout();
-     void OnPairButtonPressed();
-     void OnUnpairButtonPressed();
+     void onPairButtonPressed();
+     void onUnpairButtonPressed();
 
 private:
+    QString username;
     Ui::NotepadWindow *ui;
     QMenu *fileMenu;
     QAction *openAction;
     QAction *saveAction;
     QAction *logoutAction;
-    QString username;
 };
 
-#endif // NOTEPADWINDOW_H
+#endif // CLIENT_NOTEPADWINDOW_H
