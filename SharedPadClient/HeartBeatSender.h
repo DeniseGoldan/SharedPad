@@ -2,6 +2,7 @@
 #define CLIENT_HEART_BEAT_SENDER_H
 
 #include<QString>
+#include<QMessageBox>
 
 #include <string>
 #include <pthread.h>

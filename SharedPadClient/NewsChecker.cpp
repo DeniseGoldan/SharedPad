@@ -37,6 +37,10 @@ void NewsChecker::checkInbox()
             emit receivePeerUsername(temp);
             break;
         }
+        case CONNECTION_FAILED_CODE:
+        {
+            emit serverCrashed();
+        }
         }
         sleep(2);
     }

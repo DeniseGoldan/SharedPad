@@ -24,6 +24,7 @@ public slots:
 signals:
     void receiveNewsFromPeer(QString news);
     void receivePeerUsername(QString peerUsername);
+    void serverCrashed();
 
 private:
     string username;

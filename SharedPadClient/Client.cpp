@@ -110,7 +110,6 @@ GenericResponse *Client::sendRequest(string jsonRequest){
         return Client::getJsonParsingFailedResponse();
     }
 
-
     // If it reaches this point, the response from the server will contain the actual result of the request made by the client
     Document newDocument;
     newDocument.CopyFrom(*jsonDocument, newDocument.GetAllocator());

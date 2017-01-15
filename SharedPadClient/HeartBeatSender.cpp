@@ -27,12 +27,7 @@ void *HeartBeatSender::handleUpdating(void *argument)
 
     while(true)
     {
-        GenericResponse* response = Client::sendRequest(jsonUpdateRequest);
-        if (response->getCode() == CONNECTION_FAILED_CODE)
-        {
-            handleUpdating_logger->critical("SERVER CRASHED");
-            exit(EXIT_FAILURE);
-        }
+        Client::sendRequest(jsonUpdateRequest);
         sleep(5);
     }
 }

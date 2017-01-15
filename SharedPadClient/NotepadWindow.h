@@ -35,6 +35,8 @@ class NotepadWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    bool announced = false;
+
     explicit NotepadWindow(QWidget *parent = 0);
     ~NotepadWindow();
     QString getUsername();
@@ -47,6 +49,7 @@ public:
 public slots:
     void handleReceiveNewsFromPeer(QString news);
     void handleReceivePeerUsername(QString peerUsername);
+    void handleServerCrashed();
 
 private slots:
      void openFile();

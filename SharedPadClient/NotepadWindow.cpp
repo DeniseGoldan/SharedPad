@@ -118,25 +118,18 @@ void NotepadWindow::onPairButtonPressed()
         {
         case PAIR_ADDED_CODE :
         {
-            QMessageBox::information(this,"Pair approved!","You have a pair.");
+            QMessageBox::information(this,"Approved!","You have a pair.");
             ui->peerUsernameTag->setText(peerUsername);
             break;
         }
         default:
         {
-            QMessageBox::information(this,"Pair not approved!","Sorry...");
+            QMessageBox::information(this,"Not approved!","Sorry...");
             break;
         }
         }
     }
-
-    //case CONNECTION_FAILED_CODE:
-    //{
-      //  QMessageBox::critical(this,"Error","Server failed.");
-       // exit(EXIT_FAILURE);
-    //}
 }
-
 void NotepadWindow::onUnpairButtonPressed()
 {
     QMessageBox confirm;
@@ -169,6 +162,7 @@ void NotepadWindow::check()
 
     QObject::connect(worker, SIGNAL(receiveNewsFromPeer(QString)), this, SLOT(handleReceiveNewsFromPeer(QString)));
     QObject::connect(worker, SIGNAL(receivePeerUsername(QString)), this, SLOT(handleReceivePeerUsername(QString)));
+    QObject::connect(worker, SIGNAL(serverCrashed()), this, SLOT(handleServerCrashed()));
 
     worker->moveToThread(thread);
     thread->start();
@@ -176,14 +170,32 @@ void NotepadWindow::check()
 
 void NotepadWindow::handleReceiveNewsFromPeer(QString content)
 {
-    //handleReceiverFile_logger->warn(content.toStdString());
     ui->textEdit->setText(content);
 }
 
 void NotepadWindow::handleReceivePeerUsername(QString peerUsername)
 {
-    //handleReceiverFile_logger->warn(content.toStdString());
     ui->peerUsernameTag->setText(peerUsername);
+}
+
+void NotepadWindow::handleServerCrashed()
+{
+    if (announced == false)
+    {
+        announced = true;
+        QMessageBox msgBox(QMessageBox::Question,
+                           tr("Server crashed"),
+                           "How do you wish to proceed?",
+                           QMessageBox::Yes | QMessageBox::No);
+
+        msgBox.setButtonText(QMessageBox::Yes, tr("Continue editing"));
+        msgBox.setButtonText(QMessageBox::No, tr("Exit application"));
+        if(msgBox.exec() == QMessageBox::Yes)
+        {
+            return;
+        }
+        exit(EXIT_SUCCESS);
+    }
 }
 
 void NotepadWindow::openFile(){
@@ -194,21 +206,15 @@ void NotepadWindow::openFile(){
         confirm.setText(tr("Opening a new file means discarding the editing done on the current file. Do you wish to proceed?"));
         confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
         confirm.setDefaultButton(QMessageBox::No);
-
         if(confirm.exec() == QMessageBox::No)
         {
             return;
         }
     }
-
-    // Remove characters from textEdit
     ui->textEdit->clear();
-
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open file"), "/home", tr("Text Files (*.txt)"));
-
     if(!fileName.isEmpty())
     {
-
         QFile file(fileName);
         if(!file.open(QIODevice::ReadOnly))
         {
@@ -235,7 +241,6 @@ void NotepadWindow::openFile(){
 
 void NotepadWindow::saveFile(){
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save file"), QString(), tr("Text Files (*.txt)"));
-
     if (!fileName.isEmpty())
     {
         QFile file(fileName);
