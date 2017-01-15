@@ -36,7 +36,7 @@ Document *JsonRequestParser::parseJson(const char *jsonMessage)
         return nullptr;
     }
 
-    if (!JsonRequestParser::argumentsCorrespondToCommand(stackDocument[COMMAND].GetString(), stackDocument))
+    if (!JsonRequestParser::argumentsMatchCommand(stackDocument[COMMAND].GetString(), stackDocument))
     {
         parseJsonMessage_logger->warn("The provided arguments do not correspond to the COMMAND.");
         return nullptr;
@@ -51,10 +51,10 @@ Document *JsonRequestParser::parseJson(const char *jsonMessage)
     return heapDocument;
 }
 
-bool JsonRequestParser::argumentsCorrespondToCommand(const char *command, const Document &document)
+bool JsonRequestParser::argumentsMatchCommand(const char *command, const Document &document)
 {
-    // LOGIN, LOGOUT or QUERY
-    if (command == LOGIN || command == LOGOUT || command == QUERY || command == CHECK_NEWS)
+    // LOGIN, LOGOUT, HEARTBEAT, CHECK_NEWS
+    if (command == LOGIN || command == LOGOUT || command == HEARTBEAT || command == CHECK_NEWS)
     {
         if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString())
         {
@@ -62,8 +62,8 @@ bool JsonRequestParser::argumentsCorrespondToCommand(const char *command, const 
         }
     }
 
-    // PAIR_REQUEST
-    if (command == PAIR_REQUEST)
+    // PAIR
+    if (command == PAIR)
     {
         if (!document[ARGUMENTS].HasMember(SENDER) || !document[ARGUMENTS][SENDER].IsString())
         {

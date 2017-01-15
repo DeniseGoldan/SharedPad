@@ -9,9 +9,19 @@ int GenericResponse::getCode() const
     return code;
 }
 
+void GenericResponse::setCode(int code)
+{
+    this->code = code;
+}
+
 const string &GenericResponse::getCodeDescription() const
 {
     return codeDescription;
+}
+
+void GenericResponse::setCodeDescription(const string &codeDescription)
+{
+    this->codeDescription = codeDescription;
 }
 
 const string &GenericResponse::getSender() const
@@ -24,21 +34,6 @@ const string &GenericResponse::getReceiver() const
     return receiver;
 }
 
-void GenericResponse::setCode(int code)
-{
-    this->code = code;
-}
-
-void GenericResponse::setCodeDescription(const string &codeDescription)
-{
-    this->codeDescription = codeDescription;
-}
-
-void GenericResponse::setSender(const string &sender)
-{
-    this->sender = sender;
-}
-
 void GenericResponse::setReceiver(const string &receiver)
 {
     this->receiver = receiver;
@@ -49,17 +44,7 @@ const string &GenericResponse::getUsername() const
     return username;
 }
 
-void GenericResponse::setUsername(const string &user)
-{
-    this->username = user;
-}
-
 const string &GenericResponse::getContent() const
 {
     return content;
-}
-
-void GenericResponse::setContent(const string &content)
-{
-    this->content = content;
 }

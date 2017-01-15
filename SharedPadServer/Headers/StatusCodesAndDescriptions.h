@@ -38,13 +38,13 @@ const int LOGIN_FAILED_CODE = 404;
 const char *const LOGOUT = "logout";
 const char *const LOGOUT_APPROVED = "logout_approved";
 const int LOGOUT_APPROVED_CODE = 201;
-//QUERY
-const char *const QUERY = "query";
-const char *const QUERY_APPROVED = "query_approved";
-const int QUERY_APPROVED_CODE = 202;
+//HEARTBEAT
+const char *const HEARTBEAT = "heartbeat";
+const char *const HEARTBEAT_APPROVED = "heartbeat_approved";
+const int HEARTBEAT_APPROVED_CODE = 202;
 //PAIR and UNPAIR
-const char *const PAIR_REQUEST = "pair_request";
-const char *const UNPAIR_REQUEST = "unpair_request";
+const char *const PAIR = "pair_request";
+const char *const UNPAIR = "unpair_request";
 const char *const PAIR_ADDED = "pair_added";
 const int PAIR_ADDED_CODE = 203;
 const char *const INVITED_YOURSELF = "invited_yourself";

@@ -16,7 +16,7 @@ public:
 private:
     JsonRequestParser();
 
-    static bool argumentsCorrespondToCommand(const char *command, const Document &document);
+    static bool argumentsMatchCommand(const char *command, const Document &document);
 };
 
 #endif //SERVER_JSON_REQUEST_PARSER

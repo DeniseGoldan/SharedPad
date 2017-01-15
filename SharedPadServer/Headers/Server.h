@@ -33,7 +33,8 @@ namespace spd = spdlog;
 using namespace rapidjson;
 using namespace std;
 
-class Server {
+class Server
+{
 
 public:
     Server();
@@ -42,13 +43,27 @@ public:
 
 private:
 
-    static sockaddr_in serverConfiguration;
-    static const char * ip;
-    static const in_port_t port;
-    static map<string, User> *loggedUsers;
-    static map<string, string> *pairs;
-
     static void *handleClient(void *client);
+
+    // Routines executed by the server in order to satisfy the requests coming from the clients
+
+    static GenericResponse *executeGenericRequest(const Document *document);
+
+    static GenericResponse *executeLoginRequest(const Document *document);
+
+    static GenericResponse *executeLogoutRequest(const Document *document);
+
+    static GenericResponse *executeHeartbeatConfirmation(const Document *document);
+
+    static GenericResponse *executePairRequest(const Document *document);
+
+    static GenericResponse *executeUnpairRequest(const Document *document);
+
+    static GenericResponse *executeSendNewsRequest(const Document *document);
+
+    static GenericResponse *executeCheckNewsRequest(const Document *document);
+
+    // Exchanging messages with the clients
 
     static int readJsonRequestLength(const ClientInformation *currentClient);
 
@@ -56,35 +71,62 @@ private:
 
     static bool sendResponse(const GenericResponse &response, int clientSocketFD);
 
-    static GenericResponse *executeGenericRequest(ClientInformation *clientInformation, Document *document);
+    // Server's disconnecting service
 
-    static GenericResponse *executeLoginRequest(ClientInformation *clientInformation, Document *document);
-
-    static GenericResponse *executeLogoutRequest(ClientInformation *clientInformation, Document *document);
-
-    static GenericResponse *executeQuery(ClientInformation *clientInformation, Document *document);
-
-    static GenericResponse *executePairRequest(ClientInformation *clientInformation, Document *document);
-
-    static GenericResponse *executeUnpairRequest(ClientInformation *clientInformation, Document *document);
-
-    static GenericResponse *executeSendNews(ClientInformation *clientInformation, Document *document);
-
-    static GenericResponse *executeCheckNews(ClientInformation *clientInformation, Document *document);
-
-    static void disconnectInactiveClients();
+    static void startDisconnectingService();
 
     static void *handleDisconnecting(void *);
 
+    // Utility functions
+
+    static bool usernameIsPaired(const char *username);
+
+    static void removePairContainingUsername(const string &username);
+
+    static std::string getPeerUsername(std::string username);
+
     static bool stringContainsOnlyDigits(char *string);
+
+    // Print functions
 
     static void printLoggedUsers();
 
     static void printPairs();
 
-    static bool usernameIsPaired(const char* username);
+    static sockaddr_in serverConfiguration;
+    static const char *ip;
+    static const in_port_t port;
 
-    static std::string getPeerUsername(std::string username);
+    static map<string, User> *loggedUsers;
+    static map<string, string> *pairs;
+
+    static GenericResponse *handleIncorrectRequest();
+
+    static void *terminateThread();
+
+    static GenericResponse *getLoginFailedResponse();
+
+    static GenericResponse *getLoginApprovedResponse();
+
+    static GenericResponse *getLogoutApprovedResponse();
+
+    static GenericResponse *getUnknownResponse();
+
+    static GenericResponse *getResponseBasedOnCommand(const Document *document, const char *command);
+
+    static GenericResponse *getUserNotLoggedInResponse();
+
+    static GenericResponse *getHeartBeatApprovedResponse();
+
+    static GenericResponse *getPairAddedResponse();
+
+    static GenericResponse *getAlreadyPairedResponse();
+
+    static GenericResponse *getInvitedYourselfResponse();
+
+    static GenericResponse *getYourAreSingleResponse();
+
+    static GenericResponse *getSentNewsToPeerResponse();
 };
 
 

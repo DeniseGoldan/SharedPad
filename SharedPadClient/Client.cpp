@@ -35,22 +35,6 @@ int Client::establishConnection()
         return -1;
     }
 
-    struct timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
-
-    if (-1 == setsockopt(socketFD, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)))
-    {
-        establishConnection_logger->warn("Setting socket option (SO_RCVTIMEO) failed.");
-        return -1;
-    }
-
-    if (-1 == setsockopt(socketFD, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(timeout)))
-    {
-        establishConnection_logger->warn("Setting socket option (SO_SNDTIMEO) failed.");
-        return -1;
-    }
-
     return socketFD;
 }
 
@@ -68,7 +52,7 @@ GenericResponseMessage*Client::login(string username){
 GenericResponseMessage*Client::pair(string sender, string receiver){
 
     GenericRequestMessage pairRequest;
-    pairRequest.setCommand(PAIR_REQUEST);
+    pairRequest.setCommand(PAIR);
     pairRequest.setSender(sender);
     pairRequest.setReceiver(receiver);
 
@@ -266,24 +250,6 @@ Client::sendRequestToServer(string jsonRequest){
     newDocument.CopyFrom(*jsonDocument, newDocument.GetAllocator());
     response->setCode(newDocument[CODE].GetInt());
     response->setCodeDescription(newDocument[CODE_DESCRIPTION].GetString());
-
-    // if there is a full RECEIVER field, save the data
-    if (newDocument.HasMember(RECEIVER)
-            && newDocument[CODE].GetInt() == ALREADY_PAIRED_CODE
-            && !newDocument[RECEIVER].IsNull())
-    {
-        sendRequestToServer_logger->warn("___updating peer username___");
-        response->setReceiver(newDocument[RECEIVER].GetString());
-    }
-
-    // if my peer logged out and I press pairButton
-    if (newDocument.HasMember(RECEIVER)
-            && newDocument[CODE].GetInt() == USER_NOT_LOGGED_IN_CODE
-            && newDocument[RECEIVER].IsNull())
-    {
-        sendRequestToServer_logger->warn("___updating peer username to null___");
-        response->setReceiver("...you do not have a pair");
-    }
 
     close(socketFD);
     free(jsonDocument);

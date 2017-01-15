@@ -24,7 +24,7 @@ void *QuerySender::handleUpdating(void *argument)
     handleUpdating_logger->info(castedArgument);
 
     GenericRequestMessage updateRequest;
-    updateRequest.setCommand(QUERY);
+    updateRequest.setCommand(HEARTBEAT);
     updateRequest.setUsername(username);
 
     string jsonUpdateRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(updateRequest);

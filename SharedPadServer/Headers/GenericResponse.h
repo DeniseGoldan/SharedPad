@@ -22,19 +22,13 @@ public:
 
     const string &getSender() const;
 
-    void setSender(const string &sender);
-
     const string &getReceiver() const;
 
     void setReceiver(const string &receiver);
 
     const string &getUsername() const;
 
-    void setUsername(const string &user);
-
     const string &getContent() const;
-
-    void setContent(const string &content);
 
 private:
     int code = -1;

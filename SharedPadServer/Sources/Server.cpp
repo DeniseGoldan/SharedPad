@@ -1,8 +1,8 @@
 #include "../Headers/Server.h"
 
+sockaddr_in Server::serverConfiguration;
 const char *Server::ip = "127.0.0.1";
 const in_port_t Server::port = 2024;
-sockaddr_in Server::serverConfiguration;
 map<string, User> *Server::loggedUsers;
 map<string, string> *Server::pairs;
 
@@ -13,15 +13,12 @@ auto readJsonRequestFromClient_logger = spd::stdout_color_mt("readJsonRequestFro
 auto sendResponseToClient_logger = spd::stdout_color_mt("sendResponseToClient_logger");
 auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
 auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
-auto query_logger = spd::stdout_color_mt("query_logger");
+auto heartbeat_logger = spd::stdout_color_mt("heartbeat_logger");
 auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
-
-//mutex Server::pairsMutex;
-//mutex Server::loggedUsersMutex;
 
 Server::Server()
 {
-    bzero(&serverConfiguration, sizeof(sockaddr_in));
+    memset(&serverConfiguration, 0, sizeof(struct sockaddr_in));
     serverConfiguration.sin_family = AF_INET;
     inet_aton(ip, &serverConfiguration.sin_addr);
     serverConfiguration.sin_port = htons(port);
@@ -29,7 +26,7 @@ Server::Server()
     loggedUsers = new map<string, User>();
     pairs = new map<string, string>();
 
-    disconnectInactiveClients();
+    startDisconnectingService();
 }
 
 void Server::startListeningSession()
@@ -37,364 +34,385 @@ void Server::startListeningSession()
     int serverSocketFD = socket(AF_INET, SOCK_STREAM, 0);
     if (-1 == serverSocketFD)
     {
-        ErrorHandler::exitFailure("Socket creation failed.\n");
+        ErrorHandler::exitFailure("CRITICAL - Socket creation failed.\n");
     }
 
     int enable = 1;
     if (-1 == setsockopt(serverSocketFD, SOL_SOCKET, SO_REUSEADDR, &enable, (socklen_t) sizeof(enable)))
     {
-        ErrorHandler::exitFailure("Setting socket option (SO_REUSEADDR) failed.\n");
+        ErrorHandler::exitFailure("CRITICAL - Setting SO_REUSEADDR failed.\n");
     }
 
     if (-1 == bind(serverSocketFD, (const sockaddr *) &serverConfiguration, sizeof(sockaddr)))
     {
-        ErrorHandler::exitFailure("Bind failed.\n");
+        ErrorHandler::exitFailure("CRITICAL - Binding failed.\n");
     }
 
     if (-1 == listen(serverSocketFD, SOMAXCONN))
     {
-        ErrorHandler::exitFailure("Listening failed.\n");
+        ErrorHandler::exitFailure("CRITICAL - Listening failed.\n");
     }
 
-    while (1)
+    while (true)
     {
         ClientInformation *currentClient = new ClientInformation();
-        currentClient->clientSocketFD = accept(serverSocketFD, (sockaddr *) &currentClient->address,
-                                               &currentClient->addressLength);
+        currentClient->clientSocketFD = accept(serverSocketFD,
+                                               (sockaddr *) &currentClient->address, &currentClient->addressLength);
 
         if (-1 == currentClient->clientSocketFD)
         {
-            startListeningSession_logger->warn("ClientInformation acceptance failed.");
+            startListeningSession_logger->warn("Accepting client failed.");
             continue;
         }
 
         pthread_t threadId;
         if (0 != pthread_create(&threadId, nullptr, Server::handleClient, (void *) currentClient))
         {
-            startListeningSession_logger->critical("Thread creation failed.");
-            ErrorHandler::exitFailure("Thread creation failed.\n");
+            startListeningSession_logger->warn("Thread creation failed.");
+            continue;
         }
     }
 }
 
+/**
+ * handleClient
+ *
+ * Each request coming from the client has the following form:"<lenght>\n<content>", where <length> is the length of the
+ * <content>, and <content> is a json that consists of a command (e.g.: "login", "heartbeat") and its arguments
+ * (e.g: "username", "sender").
+ * In order to process the request, the lenght must be extracted, and based on the length, a number of bits will
+ * be read from the socket, representing the json. The json will be parsed and, the command with its arguments will be
+ * extracted. The command will be passed to executeGenericRequest, a function that returns the response from the server,
+ * after executing the command.
+ **/
 void *Server::handleClient(void *client)
 {
-    handleClient_logger->info("Inside handleClient function.");
-    //handleClient_logger->info("Setting socket options SO_RCVTIMEO and SO_SNDTIMEO.");
-    struct timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
     ClientInformation *currentClient = (ClientInformation *) client;
-    if (-1 == setsockopt(currentClient->clientSocketFD, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)))
-    {
-        handleClient_logger->warn("Setting socket option (SO_RCVTIMEO) failed.");
-    }
-    if (-1 == setsockopt(currentClient->clientSocketFD, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(timeout)))
-    {
-        handleClient_logger->warn("Setting socket option (SO_SNDTIMEO) failed.");
-    }
 
+    handleClient_logger->info("Reading the request length.");
     int jsonRequestLength = readJsonRequestLength(currentClient);
-    //handleClient_logger->info("jsonRequestLength");
-    //handleClient_logger->info(jsonRequestLength);
     if (jsonRequestLength == -1)
     {
         handleClient_logger->warn("jsonRequestLength == -1");
-        pthread_detach(pthread_self());
-        pthread_exit(nullptr);
+        return terminateThread();
     }
+
     char *jsonRequest = readJsonRequest(currentClient, jsonRequestLength);
-    //handleClient_logger->info("jsonRequest:");
+    handleClient_logger->info("Reading the request. The request is: ");
     handleClient_logger->info(jsonRequest);
     if (jsonRequest == nullptr)
     {
         handleClient_logger->warn("jsonRequest == nullptr");
         free(jsonRequest);
-        pthread_detach(pthread_self());
-        pthread_exit(nullptr);
+        return terminateThread();
     }
+
+    handleClient_logger->info("Parsing the request.");
     Document *jsonDocument = JsonRequestParser::parseJson(jsonRequest);
     if (jsonDocument == nullptr)
     {
         handleClient_logger->warn("jsonDocument == nullptr");
         free(jsonRequest);
         free(jsonDocument);
-        pthread_detach(pthread_self());
-        pthread_exit(nullptr);
+        return terminateThread();
     }
-    handleClient_logger->info("Passed parsing of the request.");
 
-    GenericResponse *message = executeGenericRequest(currentClient, jsonDocument);
-    handleClient_logger->info("Executed request...");
-    sendResponse(*message, currentClient->clientSocketFD);
-    handleClient_logger->info("codeDescription:");
+    handleClient_logger->info("Executing the request.");
+    GenericResponse *message = executeGenericRequest(jsonDocument);
+
+    handleClient_logger->info("Sending a response back. The response is: ");
     handleClient_logger->info(message->getCodeDescription());
+    sendResponse(*message, currentClient->clientSocketFD);
 
-    //free(jsonRequest);
-    handleClient_logger->info("End of handleClient function.");
-
-    pthread_detach(pthread_self());
-    pthread_exit(nullptr);
+    return terminateThread();
 }
 
-GenericResponse *Server::executeGenericRequest(ClientInformation *currentClient, Document *document)
+/**
+ * Returns the response from the server, after executing the command specified in the document.
+ * */
+GenericResponse *Server::executeGenericRequest(const Document *document)
 {
-    executeRequest_logger->info("Inside execute request");
-    GenericResponse *response = new GenericResponse();
-    response->setCode(UNKNOWN_CODE);
-    response->setCodeDescription(UNKNOWN);
-
     if (document == nullptr)
     {
         executeRequest_logger->warn("Parsing the request failed.");
-        pthread_detach(pthread_self());
-        response->setCode(JSON_PARSING_FAILED_CODE);
-        response->setCodeDescription(JSON_PARSING_FAILED);
-        return response;
+        return handleIncorrectRequest();
     }
 
-    executeRequest_logger->warn("Finding out the command's name.");
-
+    executeRequest_logger->warn("Determining the actual command.");
     char *command = (char *) malloc(500 * sizeof(char));
-    strcpy(command, "");
     strcpy(command, document->FindMember(COMMAND)->value.GetString());
 
-    executeRequest_logger->warn("No problem allocating.");
-
-
-    if (0 == strcmp(LOGIN, command))
-    {
-        response = executeLoginRequest(currentClient, document);
-    }
-
-    if (0 == strcmp(LOGOUT, command))
-    {
-        response = executeLogoutRequest(currentClient, document);
-    }
-
-    if (0 == strcmp(QUERY, command))
-    {
-        response = executeQuery(currentClient, document);
-    }
-
-    if (0 == strcmp(PAIR_REQUEST, command))
-    {
-        response = executePairRequest(currentClient, document);
-    }
-
-    if (0 == strcmp(UNPAIR_REQUEST, command))
-    {
-        response = executeUnpairRequest(currentClient, document);
-    }
-
-    if (0 == strcmp(SEND_NEWS, command))
-    {
-        response = executeSendNews(currentClient, document);
-    }
-
-    if (0 == strcmp(CHECK_NEWS, command))
-    {
-        response = executeCheckNews(currentClient, document);
-    }
-    return response;
-
+    return getResponseBasedOnCommand(document, command);
 }
 
-GenericResponse *Server::executeLoginRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::getResponseBasedOnCommand(const Document *document, const char *command)
+{
+    if (0 == strcmp(LOGIN, command)) { return executeLoginRequest(document); }
+
+    if (0 == strcmp(LOGOUT, command)) { return executeLogoutRequest(document); }
+
+    if (0 == strcmp(HEARTBEAT, command)) { return executeHeartbeatConfirmation(document); }
+
+    if (0 == strcmp(PAIR, command)) { return executePairRequest(document); }
+
+    if (0 == strcmp(UNPAIR, command)) { return executeUnpairRequest(document); }
+
+    if (0 == strcmp(SEND_NEWS, command)) { return executeSendNewsRequest(document); }
+
+    if (0 == strcmp(CHECK_NEWS, command)) { return executeCheckNewsRequest(document); }
+
+    return getUnknownResponse();
+}
+
+GenericResponse *Server::getUnknownResponse()
 {
     GenericResponse *response = new GenericResponse();
+    response->setCode(UNKNOWN_CODE);
+    response->setCodeDescription(UNKNOWN);
+    return response;
+}
+
+/**
+ * LOGIN
+ *
+ * Adds username key to loggedUsers map, along with its own User instance, if username is not already taken
+ * and sends a "login approved"  * response back to the client. If username is already registered, sends a
+ * "login failed" response back to the client.
+**/
+GenericResponse *Server::executeLoginRequest(const Document *document)
+{
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     if (loggedUsers->find(username) == loggedUsers->cend())
     {
-        // Add new user to the loggedUsers map
         User *newUserInformation = new User();
         loggedUsers->insert(pair<string, User>(username, *newUserInformation));
-        // Send a "login approved" response back to the client
-        response->setCode(LOGIN_APPROVED_CODE);
-        response->setCodeDescription(LOGIN_APPROVED);
-    } else
-    {
-        // Username is already registered, send a "login failed" response back to the client
-        response->setCode(LOGIN_FAILED_CODE);
-        response->setCodeDescription(LOGIN_FAILED);
+        return getLoginApprovedResponse();
     }
+    else
+    {
+        return getLoginFailedResponse();
+    }
+}
+
+GenericResponse *Server::getLoginApprovedResponse()
+{
+    GenericResponse *response = new GenericResponse();
+    response->setCode(LOGIN_APPROVED_CODE);
+    response->setCodeDescription(LOGIN_APPROVED);
     return response;
 }
 
-GenericResponse *Server::executeLogoutRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::getLoginFailedResponse()
 {
-    // Remove username from loggedUsers list
+    GenericResponse *response = new GenericResponse();
+    response->setCode(LOGIN_FAILED_CODE);
+    response->setCodeDescription(LOGIN_FAILED);
+    return response;
+}
+
+/**
+ * LOGOUT
+ *
+ * Removes username from loggedUsers map and removes pair if username is in a pair and returns a response.
+**/
+
+GenericResponse *Server::executeLogoutRequest(const Document *document)
+{
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     loggedUsers->erase(username);
+    removePairContainingUsername(username);
+    return getLogoutApprovedResponse();
+}
 
-    // Remove pair if username is in a pair
-    for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
-    {
-        if (0 == strcmp(username.c_str(), (*constIterator).first.c_str()))
-        {
-            pairs->erase((*constIterator).first.c_str());
-            break;
-        }
-        if (0 == strcmp(username.c_str(), (*constIterator).second.c_str()))
-        {
-            pairs->erase((*constIterator).first.c_str());
-            break;
-        }
-    }
+GenericResponse *Server::getLogoutApprovedResponse()
+{
     GenericResponse *response = new GenericResponse();
     response->setCode(LOGOUT_APPROVED_CODE);
     response->setCodeDescription(LOGOUT_APPROVED);
     return response;
 }
 
-GenericResponse *Server::executeQuery(ClientInformation *clientInformation, Document *document)
+/**
+ * HEARTBEAT
+ *
+ * Each clients has a worker that sends a request to the server to update its last connection check time, so that the
+ * server can keep track of the client's activity. After receiving such a message, the server updates the field
+ * "last check" from the corresponding User instance. If the clients hasn't sent any heartbeat confirmations after
+ * a certain amount of time (10 seconds), the disconnecting inactive clients service will remove the username from
+ * the loggedUsers map along with its pair from pairs map, considering that the client is inactive.
+ * */
+GenericResponse *Server::executeHeartbeatConfirmation(const Document *document)
 {
-    GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
 
-    // Client send a request to update its last connection check, server receives request and updates based on server time
     if (loggedUsers->find(username) == loggedUsers->cend())
     {
-        // Username is not registered
-        response->setCode(USER_NOT_LOGGED_IN_CODE);
-        response->setCodeDescription(USER_NOT_LOGGED_IN);
-    } else
+        return getUserNotLoggedInResponse();
+    }
+    else
     {
-        // Username was found in the list
-        timeval now;
-        gettimeofday(&now, NULL);
+        timeval now; gettimeofday(&now, NULL);
         loggedUsers->at(username).updateLastCheck(now);
 
-        query_logger->warn("update");
-        query_logger->warn(username);
+        heartbeat_logger->warn("heartbeat");
+        heartbeat_logger->warn(username);
 
-        response->setCode(QUERY_APPROVED_CODE);
-        response->setCodeDescription(QUERY_APPROVED);
+        return getHeartBeatApprovedResponse();
     }
+}
+
+GenericResponse *Server::getHeartBeatApprovedResponse()
+{
+    GenericResponse *response = new GenericResponse();
+    response->setCode(HEARTBEAT_APPROVED_CODE);
+    response->setCodeDescription(HEARTBEAT_APPROVED);
     return response;
 }
 
-GenericResponse *Server::executePairRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::getUserNotLoggedInResponse()
 {
-    pairRequest_logger->info("Inside executePairRequest function.");
     GenericResponse *response = new GenericResponse();
+    response->setCode(USER_NOT_LOGGED_IN_CODE);
+    response->setCodeDescription(USER_NOT_LOGGED_IN);
+    return response;
+}
+
+/**
+ * PAIR
+ *
+ * Pairs the sender and receiver only if they are both logged and if they are not already paired.
+ * */
+GenericResponse *Server::executePairRequest(const Document *document)
+{
     string sender = document->FindMember(ARGUMENTS)->value[SENDER].GetString();
     string receiver = document->FindMember(ARGUMENTS)->value[RECEIVER].GetString();
 
-    if (usernameIsPaired(sender.c_str()))
+    if (loggedUsers->find(sender) != loggedUsers->cend())
     {
-        response->setCode(ALREADY_PAIRED_CODE);
-        response->setCodeDescription(ALREADY_PAIRED);
-        char *expected = (char *) malloc(MAX_COMM_NAME_LEN * sizeof(char));
-        for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
+        pairRequest_logger->info("Sender is logged in");
+        if (loggedUsers->find(receiver) != loggedUsers->cend())
         {
-            if (0 == strcmp((*constIterator).first.c_str(), sender.c_str()))
+            pairRequest_logger->info("Receiver is logged in");
+            if (0 == sender.compare(receiver))
             {
-                strcpy(expected, (*constIterator).second.c_str());
-                break;
+                pairRequest_logger->warn("Sender is the same as receiver");
+                return getInvitedYourselfResponse();
             }
-            if (0 == strcmp((*constIterator).second.c_str(), sender.c_str()))
+            else
             {
-                strcpy(expected, (*constIterator).first.c_str());
-                break;
-            }
-        }
-        response->setReceiver(expected);
-        return response;
-    }
-
-    if (loggedUsers->find(sender) != loggedUsers->cend())// sender is logged in
-    {
-        pairRequest_logger->info("sender is logged in");
-        if (loggedUsers->find(receiver) != loggedUsers->cend())//receiver is logged in
-        {
-            pairRequest_logger->info("receiver is logged in");
-            if (0 == sender.compare(receiver))// sender is the same as receiver
-            {
-                pairRequest_logger->warn("sender is the same as receiver");
-                response->setCode(INVITED_YOURSELF_CODE);
-                response->setCodeDescription(INVITED_YOURSELF);
-            } else // sender is different from receiver
-            {
-                pairRequest_logger->info("sender is different from receiver");
-                if (usernameIsPaired(sender.c_str()) || usernameIsPaired(receiver.c_str()))// already paired
+                pairRequest_logger->info("Sender is different from receiver");
+                if (usernameIsPaired(sender.c_str()) || usernameIsPaired(receiver.c_str()))
                 {
-                    pairRequest_logger->warn("sender or receiver already paired");
-                    response->setCode(ALREADY_PAIRED_CODE);
-                    response->setCodeDescription(ALREADY_PAIRED);
-                    if (usernameIsPaired(sender.c_str()))
-                    {
-                        response->setCode(ALREADY_PAIRED_CODE);
-                        response->setCodeDescription(ALREADY_PAIRED);
-                        char *expected = (char *) malloc(MAX_COMM_NAME_LEN * sizeof(char));
-                        for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
-                        {
-                            if (0 == strcmp((*constIterator).first.c_str(), sender.c_str()))
-                            {
-                                strcpy(expected, (*constIterator).second.c_str());
-                                break;
-                            }
-                            if (0 == strcmp((*constIterator).second.c_str(), sender.c_str()))
-                            {
-                                strcpy(expected, (*constIterator).first.c_str());
-                                break;
-                            }
-                        }
-                        response->setReceiver(expected);
-                    }
-                } else
+                    pairRequest_logger->warn("Sender or receiver already paired");
+                    return getAlreadyPairedResponse();
+                }
+                else
                 {
-                    pairRequest_logger->info("sender and receiver have not been paired yet");
-                    if (!usernameIsPaired(sender.c_str()) && !usernameIsPaired(receiver.c_str()))//not already paired
+                    pairRequest_logger->info("Sender and receiver have not been paired yet");
+                    if (!usernameIsPaired(sender.c_str()) && !usernameIsPaired(receiver.c_str()))
                     {
-                        pairRequest_logger->info("receiver accepted pair invitation");
+                        pairRequest_logger->info("New pair added");
                         pairs->insert(pair<string, string>(sender, receiver));
-                        response->setCode(PAIR_ADDED_CODE);
-                        response->setCodeDescription(PAIR_ADDED);
+                        return getPairAddedResponse();
                     }
                 }
             }
-        } else//receiver not logged in
+        }
+        else
         {
             pairRequest_logger->info("receiver not logged in");
-            response->setCode(USER_NOT_LOGGED_IN_CODE);
-            response->setCodeDescription(USER_NOT_LOGGED_IN);
+            return getUserNotLoggedInResponse();
         }
-    } else// sender not logged in
+    }
+    else
     {
         pairRequest_logger->info("sender not logged in");
-        response->setCode(USER_NOT_LOGGED_IN_CODE);
-        response->setCodeDescription(USER_NOT_LOGGED_IN);
+        return getUserNotLoggedInResponse();
     }
+}
 
+GenericResponse *Server::getInvitedYourselfResponse()
+{
+    GenericResponse *response = new GenericResponse();
+    response->setCode(INVITED_YOURSELF_CODE);
+    response->setCodeDescription(INVITED_YOURSELF);
     return response;
 }
 
-GenericResponse *Server::executeSendNews(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::getAlreadyPairedResponse()
 {
     GenericResponse *response = new GenericResponse();
+    response->setCode(ALREADY_PAIRED_CODE);
+    response->setCodeDescription(ALREADY_PAIRED);
+    return response;
+}
 
+GenericResponse *Server::getPairAddedResponse()
+{
+    GenericResponse *response = new GenericResponse();
+    response->setCode(PAIR_ADDED_CODE);
+    response->setCodeDescription(PAIR_ADDED);
+    return response;
+}
+
+/**
+ * UNPAIR
+ *
+ * Eliminates pair containing username and returns a reponse back to the client.
+ * */
+GenericResponse *Server::executeUnpairRequest(const Document *document)
+{
+    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
+    removePairContainingUsername(username);
+    return getYourAreSingleResponse();
+}
+
+GenericResponse *Server::getYourAreSingleResponse()
+{
+    GenericResponse *response = new GenericResponse();
+    response->setCode(YOU_ARE_SINGLE_CODE);
+    response->setCodeDescription(YOU_ARE_SINGLE);
+    return response;
+}
+
+/**
+ * SEND_NEWS
+ *
+ * Each client must update its peer when the document suffers any alterations (insertion/ deletion).
+ * */
+GenericResponse *Server::executeSendNewsRequest(const Document *document)
+{
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     string content = document->FindMember(ARGUMENTS)->value[CONTENT].GetString();
 
     if (!usernameIsPaired(username.c_str()))
     {
-        response->setCode(YOU_ARE_SINGLE_CODE);
-        response->setCodeDescription(YOU_ARE_SINGLE);
-        return response;
-    } else
+        return getYourAreSingleResponse();
+    }
+    else
     {
         string peerUsername = getPeerUsername(username);
         loggedUsers->at(peerUsername).setHasFileContentFromPeer(true);
         loggedUsers->at(peerUsername).setPeerFileContent(content);
+        return getSentNewsToPeerResponse();
     }
+}
 
+GenericResponse *Server::getSentNewsToPeerResponse()
+{
+    GenericResponse *response = new GenericResponse();
     response->setCode(SENT_NEWS_TO_PEER_CODE);
     response->setCodeDescription(SENT_NEWS_TO_PEER);
     return response;
 }
 
-GenericResponse *Server::executeCheckNews(ClientInformation *clientInformation, Document *document)
+/**
+ * CHECK_NEWS
+ *
+ * Each client has a worker that constantly checks if its corresponding User instance suffered any changes
+ * (e.g.: its peer inserted/deleted a character). It also checks if there are any news regarding the pair map.
+ * */
+GenericResponse *Server::executeCheckNewsRequest(const Document *document)
 {
     GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -418,43 +436,158 @@ GenericResponse *Server::executeCheckNews(ClientInformation *clientInformation, 
     {
         response->setCode(HAD_NEWS_CODE);
         response->setCodeDescription(loggedUsers->at(username).getPeerFileContent());
-        response->setContent(loggedUsers->at(username).getPeerFileContent());
         loggedUsers->at(username).setHasFileContentFromPeer(false);
         loggedUsers->at(username).setPeerFileContent("");
         return response;
     }
-
-    //response->setCode(NOTHING_NEW_CODE);
-    //response->setCodeDescription(NOTHING_NEW);
-    //return response;
 }
 
-GenericResponse *Server::executeUnpairRequest(ClientInformation *clientInformation, Document *document)
+/**
+ * Extracts and returns an integer that represents the <lenght> of the request.
+ * */
+int Server::readJsonRequestLength(const ClientInformation *currentClient)
 {
-    GenericResponse *response = new GenericResponse();
-    string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
+    char *prefix = (char *) malloc(sizeof(char) * PREFIX_LENGTH);
+    memset(prefix, 0, sizeof(char) * PREFIX_LENGTH);
 
-    // eliminate pair containing this username
-    for (auto pairsIt = pairs->cbegin(); pairsIt != pairs->cend(); pairsIt++)
+    char currentCharacter[2];
+    int totalBytesRead = 0, count = 0;
+
+    while (totalBytesRead < PREFIX_LENGTH)
     {
-        if (0 == pairsIt->first.compare(username.c_str()))
+        count = (int) read(currentClient->clientSocketFD, currentCharacter, 1);
+        if (-1 == count)
         {
-            pairs->erase(pairsIt);
+            pthread_detach(pthread_self());
+            readJsonRequestLength_logger->warn("Reading the request failed.\n");
+            return -1;
+        }
+        if (currentCharacter[0] == '\n')
+        {
             break;
         }
-        if (0 == pairsIt->second.compare(username.c_str()))
+        else
         {
-            pairs->erase(pairsIt);
-            break;
+            currentCharacter[1] = '\0';
+        }
+        strcat(prefix, currentCharacter);
+        totalBytesRead += count;
+    }
+
+    if (!stringContainsOnlyDigits(prefix))
+    {
+        pthread_detach(pthread_self());
+        readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.");
+        return -1;
+    }
+
+    return atoi(prefix);
+}
+
+/**
+ * Extracts and returns the <content> of the request based on the length obtained from readJsonRequestLength function.
+ * */
+char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRequestLength)
+{
+    if (-1 == jsonRequestLength)
+    {
+        readJsonRequestFromClient_logger->warn("The length of the request is invalid.");
+        return nullptr;
+    }
+
+    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
+    char *jsonResponse = (char *) malloc(sizeof(char) * (jsonRequestLength + 2));
+
+    while (totalBytesLeftToRead > 0)
+    {
+        int bytesToReadInCurrentSession;
+
+        (totalBytesLeftToRead < BUFF_SIZE) ?
+                bytesToReadInCurrentSession = totalBytesLeftToRead :
+                bytesToReadInCurrentSession = BUFF_SIZE;
+
+        count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
+                           (size_t) bytesToReadInCurrentSession);
+        switch (count)
+        {
+            case -1:
+            {
+                close(currentClient->clientSocketFD);
+                readJsonRequestFromClient_logger->warn("Reading failed: -1 == count");
+                return nullptr;
+            }
+            case 0:
+            {
+                close(currentClient->clientSocketFD);
+                readJsonRequestFromClient_logger->warn("Reading failed: 0 == count");
+                return nullptr;
+            }
+            default:
+            {
+                totalBytesRead += count;
+                totalBytesLeftToRead -= count;
+            }
         }
     }
-    response->setCode(YOU_ARE_SINGLE_CODE);
-    response->setCodeDescription(YOU_ARE_SINGLE);
-    return response;
+
+    if (jsonResponse == nullptr)
+    {
+        readJsonRequestFromClient_logger->warn("Reading failed.");
+        return nullptr;
+    }
+
+    return jsonResponse;
 }
 
+/**
+ * Creates a length prefixed json, "<length>\n<content>", where the <length> represents the length of the <content>
+ * is a json that consists of a code, a code description and other response specific fields, that depend on the command.
+ * */
+bool Server::sendResponse(const GenericResponse &response, int clientSocketFD)
+{
+    string jsonResponse = JsonResponseGenerator::getJsonResponse(response);
+    int length = (int) jsonResponse.length();
 
-void Server::disconnectInactiveClients()
+    char *prefixedJsonResponse = (char *) malloc(sizeof(char) * (PREFIX_LENGTH + length + 1));
+    memset(prefixedJsonResponse, 0, sizeof(char) *(PREFIX_LENGTH + length + 1));
+    sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
+
+    sendResponseToClient_logger->info("Preparing to write the response.");
+    int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
+    int totalBytesSent = 0, count = 0;
+
+    while (totalBytesLeftToSend > 0)
+    {
+        count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
+        switch (count)
+        {
+            case -1:
+            {
+                sendResponseToClient_logger->warn("Writing response failed: -1 == count");
+                free(prefixedJsonResponse);
+                return false;
+            }
+            case 0:
+            {
+                sendResponseToClient_logger->warn("Writing response failed: 0 == count");
+                free(prefixedJsonResponse);
+                return false;
+            }
+            default:
+            {
+                totalBytesSent += count;
+                totalBytesLeftToSend -= count;
+            }
+        }
+    }
+    free(prefixedJsonResponse);
+    return true;
+}
+
+/**
+ * The server has a disconnecting service that removes inactive clients based on their heartbeat coinfirmations.
+ * */
+void Server::startDisconnectingService()
 {
     pthread_t threadId;
     if (0 != pthread_create(&threadId, nullptr, Server::handleDisconnecting, nullptr))
@@ -477,43 +610,19 @@ void *Server::handleDisconnecting(void *)
             gettimeofday(&now, NULL);
             if (now.tv_sec - usersIT->second.getLastCheck().tv_sec > 10)
             {
-                // Delete username from logged users
                 loggedUsers->erase(usersIT);
-                handleDisconnecting_logger->info("Server erased a client.");
-
-                // eliminate pair containing this username
-                for (auto pairsIt = pairs->cbegin(); pairsIt != pairs->cend(); pairsIt++)
-                {
-                    if (0 == pairsIt->first.compare(usersIT->first.c_str()))
-                    {
-                        pairs->erase(pairsIt);
-                        break;
-                    }
-                    if (0 == pairsIt->second.compare(usersIT->first.c_str()))
-                    {
-                        pairs->erase(pairsIt);
-                        break;
-                    }
-                }
+                removePairContainingUsername(usersIT->first.c_str());
+                handleDisconnecting_logger->info("Server erased an inactive client.");
             }
         }
-        handleDisconnecting_logger->info("Server's disconnecting service will sleep for 10 seconds.");
+        handleDisconnecting_logger->info("Server's disconnecting service will wait for 10 seconds.");
         sleep(10);
     }
 }
 
-bool Server::stringContainsOnlyDigits(char *string)
-{
-    char *end;
-    long converted = strtol(string, &end, 10);
-    if (*end)
-    {
-        // Conversion failed because the input wasn't a number.
-        return false;
-    }
-    return true;
-}
-
+/**
+ * Print functions
+ **/
 void Server::printLoggedUsers()
 {
     printf("USERS: ");
@@ -534,6 +643,10 @@ void Server::printPairs()
     printf("\n");
 }
 
+/**
+ * Utility functions  that deals with the 2 maps
+ * */
+
 bool Server::usernameIsPaired(const char *username)
 {
     for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
@@ -550,144 +663,6 @@ bool Server::usernameIsPaired(const char *username)
     return false;
 }
 
-int Server::readJsonRequestLength(const ClientInformation *currentClient)
-{
-    char *prefix = (char *) malloc(sizeof(char) * (PREFIX_LENGTH));
-    bzero(prefix, PREFIX_LENGTH);
-    strcpy(prefix, "");
-
-    char currentCharacter[2];
-    int totalBytesRead = 0, count = 0;
-
-    while (totalBytesRead < PREFIX_LENGTH)
-    {
-        count = (int) read(currentClient->clientSocketFD, currentCharacter, 1);
-        if (-1 == count)
-        {
-            pthread_detach(pthread_self());
-            readJsonRequestLength_logger->warn("Reading the request failed.\n");
-            return -1;
-        }
-        if (currentCharacter[0] == '\n')
-        {
-            break;
-        } else
-        {
-            currentCharacter[1] = '\0';
-        }
-        strcat(prefix, currentCharacter);
-        totalBytesRead += count;
-    }
-
-    if (!stringContainsOnlyDigits(prefix))
-    {
-        pthread_detach(pthread_self());
-        readJsonRequestLength_logger->warn("The prefix of the request contained invalid characters.");
-        return -1;
-    }
-
-    return atoi(prefix);
-}
-
-char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRequestLength)
-{
-    if (-1 == jsonRequestLength)
-    {
-        readJsonRequestFromClient_logger->warn("The response length is invalid.");
-        return nullptr;
-    }
-
-    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
-    char *jsonResponse = (char *) malloc((sizeof(char)) * (jsonRequestLength + 2));
-    //bzero(jsonResponse, (size_t)(jsonRequestLength + 1));
-
-    while (totalBytesLeftToRead > 0)
-    {
-        int bytesToReadInCurrentSession;
-
-        (totalBytesLeftToRead < BUFF_SIZE) ?
-                bytesToReadInCurrentSession = totalBytesLeftToRead :
-                bytesToReadInCurrentSession = BUFF_SIZE;
-
-        count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
-                           (size_t) bytesToReadInCurrentSession);
-        switch (count)
-        {
-            case -1:
-            {
-                close(currentClient->clientSocketFD);
-                readJsonRequestFromClient_logger->warn("Reading response from server failed: -1 == count");
-                return nullptr;
-            }
-            case 0:
-            {
-                close(currentClient->clientSocketFD);
-                readJsonRequestFromClient_logger->warn("Reading response from server failed: 0 == count");
-                return nullptr;
-            }
-            default:
-            {
-                totalBytesRead += count;
-                totalBytesLeftToRead -= count;
-            }
-        }
-    }
-
-    if (jsonResponse == nullptr)
-    {
-        readJsonRequestFromClient_logger->warn("Reading response from server failed.");
-        return nullptr;
-    }
-
-    return jsonResponse;
-}
-
-bool Server::sendResponse(const GenericResponse &response, int clientSocketFD)
-{
-    sendResponseToClient_logger->info("Inside sendResponse function.");
-    string jsonResponse = JsonResponseGenerator::getJsonResponse(response);
-
-    int length = (int) jsonResponse.length();
-    char *prefixedJsonResponse = (char *) malloc(sizeof(char) * (PREFIX_LENGTH + length + 1));
-    bzero(prefixedJsonResponse, sizeof(prefixedJsonResponse));
-    sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
-    sendResponseToClient_logger->info("prefixedJsonResponse");
-    sendResponseToClient_logger->info(prefixedJsonResponse);
-
-    sendResponseToClient_logger->info("Preparing to write the response into the socket.");
-    int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
-    int totalBytesSent = 0;
-    int count = 0;
-
-    while (totalBytesLeftToSend > 0)
-    {
-        count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
-        switch (count)
-        {
-            case -1:
-            {
-                sendResponseToClient_logger->warn("Writing response to client failed: -1 == count");
-                free(prefixedJsonResponse);
-                return false;
-            }
-            case 0:
-            {
-                sendResponseToClient_logger->warn("Writing response to client failed: 0 == count");
-                free(prefixedJsonResponse);
-                return false;
-            }
-            default:
-            {
-                totalBytesSent += count;
-                totalBytesLeftToSend -= count;
-            }
-        }
-    }
-    sendResponseToClient_logger->info("End of sendResponse function.");
-    free(prefixedJsonResponse);
-    return true;
-}
-
 std::string Server::getPeerUsername(std::string username)
 {
     for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
@@ -699,10 +674,52 @@ std::string Server::getPeerUsername(std::string username)
         if (0 == strcmp((*constIterator).second.c_str(), username.c_str()))
         {
             return (*constIterator).first;
-
         }
     }
     return "";
 }
 
+void Server::removePairContainingUsername(const string &username)
+{
+    for (auto constIterator = pairs->cbegin(); constIterator != pairs->cend(); constIterator++)
+    {
+        if (0 == strcmp(username.c_str(), (*constIterator).first.c_str()))
+        {
+            pairs->erase((*constIterator).first.c_str());
+            break;
+        }
+        if (0 == strcmp(username.c_str(), (*constIterator).second.c_str()))
+        {
+            pairs->erase((*constIterator).first.c_str());
+            break;
+        }
+    }
+}
 
+/**
+ * Miscellaneous
+ * */
+bool Server::stringContainsOnlyDigits(char *string)
+{
+    char *end;
+    long converted = strtol(string, &end, 10);
+    if (*end)
+    {
+        return false;
+    }
+    return true;
+}
+
+void *Server::terminateThread()
+{
+    pthread_detach(pthread_self());
+    pthread_exit(nullptr);
+}
+
+GenericResponse *Server::handleIncorrectRequest()
+{
+    GenericResponse *response = new GenericResponse();
+    response->setCode(JSON_PARSING_FAILED_CODE);
+    response->setCodeDescription(JSON_PARSING_FAILED);
+    return response;
+}

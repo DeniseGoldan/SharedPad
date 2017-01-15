@@ -123,11 +123,6 @@ void NotepadWindow::OnPairButtonPressed()
             ui->peerUsernameTag->setText(peerUsername);
             break;
         }
-        case CONNECTION_FAILED_CODE:
-        {
-            QMessageBox::critical(this,"Error","Server failed.");
-            exit(EXIT_FAILURE);
-        }
         default:
         {
             QMessageBox::information(this,"Pair not approved!","Sorry...");
@@ -135,6 +130,12 @@ void NotepadWindow::OnPairButtonPressed()
         }
         }
     }
+
+    //case CONNECTION_FAILED_CODE:
+    //{
+      //  QMessageBox::critical(this,"Error","Server failed.");
+       // exit(EXIT_FAILURE);
+    //}
 }
 
 void NotepadWindow::OnUnpairButtonPressed()
@@ -150,7 +151,7 @@ void NotepadWindow::OnUnpairButtonPressed()
     }
 
     GenericRequestMessage unpairRequest;
-    unpairRequest.setCommand(UNPAIR_REQUEST);
+    unpairRequest.setCommand(UNPAIR);
     unpairRequest.setUsername(username.toStdString());
 
     string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(unpairRequest);
