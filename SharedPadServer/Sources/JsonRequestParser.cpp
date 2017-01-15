@@ -1,11 +1,11 @@
-#include "../Headers/JsonRequestMessageParser.h"
+#include "../Headers/JsonRequestParser.h"
 
 auto parseJsonMessage_logger = spdlog::stdout_color_mt("parseJsonMessage_logger");
 
-JsonRequestMessageParser::JsonRequestMessageParser()
+JsonRequestParser::JsonRequestParser()
 {}
 
-Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage)
+Document *JsonRequestParser::parseJson(const char *jsonMessage)
 {
     //This variable will exist only inside this scope, in the stack.
     Document stackDocument;
@@ -36,7 +36,7 @@ Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage)
         return nullptr;
     }
 
-    if (!JsonRequestMessageParser::argumentsCorrespondToCommand(stackDocument[COMMAND].GetString(), stackDocument))
+    if (!JsonRequestParser::argumentsCorrespondToCommand(stackDocument[COMMAND].GetString(), stackDocument))
     {
         parseJsonMessage_logger->warn("The provided arguments do not correspond to the COMMAND.");
         return nullptr;
@@ -51,7 +51,7 @@ Document *JsonRequestMessageParser::parseJsonMessage(const char *jsonMessage)
     return heapDocument;
 }
 
-bool JsonRequestMessageParser::argumentsCorrespondToCommand(const char *command, const Document &document)
+bool JsonRequestParser::argumentsCorrespondToCommand(const char *command, const Document &document)
 {
     // LOGIN, LOGOUT or QUERY
     if (command == LOGIN || command == LOGOUT || command == QUERY || command == CHECK_NEWS)

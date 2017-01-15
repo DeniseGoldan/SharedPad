@@ -42,6 +42,11 @@ void LoginWindow::OnLoginButtonPressed()
                 sender->sendUpdates();
                 break;
             }
+        case CONNECTION_FAILED_CODE:
+        {
+            QMessageBox::critical(this,"Error","Server failed.");
+            exit(EXIT_FAILURE);
+        }
         }
     }
     this->destroy();

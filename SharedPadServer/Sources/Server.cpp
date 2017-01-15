@@ -103,7 +103,7 @@ void *Server::handleClient(void *client)
         pthread_detach(pthread_self());
         pthread_exit(nullptr);
     }
-    char *jsonRequest = readJsonRequestFromClient(currentClient, jsonRequestLength);
+    char *jsonRequest = readJsonRequest(currentClient, jsonRequestLength);
     //handleClient_logger->info("jsonRequest:");
     handleClient_logger->info(jsonRequest);
     if (jsonRequest == nullptr)
@@ -113,7 +113,7 @@ void *Server::handleClient(void *client)
         pthread_detach(pthread_self());
         pthread_exit(nullptr);
     }
-    Document *jsonDocument = JsonRequestMessageParser::parseJsonMessage(jsonRequest);
+    Document *jsonDocument = JsonRequestParser::parseJson(jsonRequest);
     if (jsonDocument == nullptr)
     {
         handleClient_logger->warn("jsonDocument == nullptr");
@@ -124,9 +124,9 @@ void *Server::handleClient(void *client)
     }
     handleClient_logger->info("Passed parsing of the request.");
 
-    GenericResponseMessage *message = executeRequest(currentClient, jsonDocument);
+    GenericResponse *message = executeGenericRequest(currentClient, jsonDocument);
     handleClient_logger->info("Executed request...");
-    sendResponseToClient(*message, currentClient->clientSocketFD);
+    sendResponse(*message, currentClient->clientSocketFD);
     handleClient_logger->info("codeDescription:");
     handleClient_logger->info(message->getCodeDescription());
 
@@ -137,10 +137,10 @@ void *Server::handleClient(void *client)
     pthread_exit(nullptr);
 }
 
-GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient, Document *document)
+GenericResponse *Server::executeGenericRequest(ClientInformation *currentClient, Document *document)
 {
     executeRequest_logger->info("Inside execute request");
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     response->setCode(UNKNOWN_CODE);
     response->setCodeDescription(UNKNOWN);
 
@@ -158,6 +158,9 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
     char *command = (char *) malloc(500 * sizeof(char));
     strcpy(command, "");
     strcpy(command, document->FindMember(COMMAND)->value.GetString());
+
+    executeRequest_logger->warn("No problem allocating.");
+
 
     if (0 == strcmp(LOGIN, command))
     {
@@ -197,15 +200,14 @@ GenericResponseMessage *Server::executeRequest(ClientInformation *currentClient,
 
 }
 
-GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executeLoginRequest(ClientInformation *clientInformation, Document *document)
 {
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     if (loggedUsers->find(username) == loggedUsers->cend())
     {
         // Add new user to the loggedUsers map
         User *newUserInformation = new User();
-        newUserInformation->setAddress(clientInformation->address);
         loggedUsers->insert(pair<string, User>(username, *newUserInformation));
         // Send a "login approved" response back to the client
         response->setCode(LOGIN_APPROVED_CODE);
@@ -219,7 +221,7 @@ GenericResponseMessage *Server::executeLoginRequest(ClientInformation *clientInf
     return response;
 }
 
-GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executeLogoutRequest(ClientInformation *clientInformation, Document *document)
 {
     // Remove username from loggedUsers list
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
@@ -239,15 +241,15 @@ GenericResponseMessage *Server::executeLogoutRequest(ClientInformation *clientIn
             break;
         }
     }
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     response->setCode(LOGOUT_APPROVED_CODE);
     response->setCodeDescription(LOGOUT_APPROVED);
     return response;
 }
 
-GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executeQuery(ClientInformation *clientInformation, Document *document)
 {
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
 
     // Client send a request to update its last connection check, server receives request and updates based on server time
@@ -272,10 +274,10 @@ GenericResponseMessage *Server::executeQuery(ClientInformation *clientInformatio
     return response;
 }
 
-GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executePairRequest(ClientInformation *clientInformation, Document *document)
 {
     pairRequest_logger->info("Inside executePairRequest function.");
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     string sender = document->FindMember(ARGUMENTS)->value[SENDER].GetString();
     string receiver = document->FindMember(ARGUMENTS)->value[RECEIVER].GetString();
 
@@ -368,9 +370,9 @@ GenericResponseMessage *Server::executePairRequest(ClientInformation *clientInfo
     return response;
 }
 
-GenericResponseMessage *Server::executeSendNews(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executeSendNews(ClientInformation *clientInformation, Document *document)
 {
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
 
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
     string content = document->FindMember(ARGUMENTS)->value[CONTENT].GetString();
@@ -392,9 +394,9 @@ GenericResponseMessage *Server::executeSendNews(ClientInformation *clientInforma
     return response;
 }
 
-GenericResponseMessage *Server::executeCheckNews(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executeCheckNews(ClientInformation *clientInformation, Document *document)
 {
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
 
     if (!loggedUsers->at(username).doesHaveFileContentFromPeer())
@@ -427,9 +429,9 @@ GenericResponseMessage *Server::executeCheckNews(ClientInformation *clientInform
     //return response;
 }
 
-GenericResponseMessage *Server::executeUnpairRequest(ClientInformation *clientInformation, Document *document)
+GenericResponse *Server::executeUnpairRequest(ClientInformation *clientInformation, Document *document)
 {
-    GenericResponseMessage *response = new GenericResponseMessage();
+    GenericResponse *response = new GenericResponse();
     string username = document->FindMember(ARGUMENTS)->value[USERNAME].GetString();
 
     // eliminate pair containing this username
@@ -587,7 +589,7 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
     return atoi(prefix);
 }
 
-char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, int jsonRequestLength)
+char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRequestLength)
 {
     if (-1 == jsonRequestLength)
     {
@@ -640,10 +642,10 @@ char *Server::readJsonRequestFromClient(const ClientInformation *currentClient, 
     return jsonResponse;
 }
 
-bool Server::sendResponseToClient(const GenericResponseMessage &response, int clientSocketFD)
+bool Server::sendResponse(const GenericResponse &response, int clientSocketFD)
 {
-    sendResponseToClient_logger->info("Inside sendResponseToClient function.");
-    string jsonResponse = JsonResponseMessageGenerator::getJsonBasicResponseMessage(response);
+    sendResponseToClient_logger->info("Inside sendResponse function.");
+    string jsonResponse = JsonResponseGenerator::getJsonResponse(response);
 
     int length = (int) jsonResponse.length();
     char *prefixedJsonResponse = (char *) malloc(sizeof(char) * (PREFIX_LENGTH + length + 1));
@@ -681,7 +683,7 @@ bool Server::sendResponseToClient(const GenericResponseMessage &response, int cl
             }
         }
     }
-    sendResponseToClient_logger->info("End of sendResponseToClient function.");
+    sendResponseToClient_logger->info("End of sendResponse function.");
     free(prefixedJsonResponse);
     return true;
 }

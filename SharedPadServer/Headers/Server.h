@@ -1,5 +1,5 @@
-#ifndef SHAREDPADSERVER_SERVER_H
-#define SHAREDPADSERVER_SERVER_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <netinet/tcp.h>
 #include <netinet/in.h>
@@ -21,9 +21,9 @@
 #include "../include/spdlog/spdlog.h"
 
 #include "Server.h"
-#include "GenericResponseMessage.h"
-#include "JsonResponseMessageGenerator.h"
-#include "JsonRequestMessageParser.h"
+#include "GenericResponse.h"
+#include "JsonResponseGenerator.h"
+#include "JsonRequestParser.h"
 #include "ErrorHandler.h"
 #include "StatusCodesAndDescriptions.h"
 #include "ClientInformation.h"
@@ -48,32 +48,29 @@ private:
     static map<string, User> *loggedUsers;
     static map<string, string> *pairs;
 
-    //static mutex loggedUsersMutex;
-    //static mutex pairsMutex;
-
     static void *handleClient(void *client);
 
     static int readJsonRequestLength(const ClientInformation *currentClient);
 
-    static char *readJsonRequestFromClient(const ClientInformation *currentClient, int jsonRequestLength);
+    static char *readJsonRequest(const ClientInformation *currentClient, int jsonRequestLength);
 
-    static bool sendResponseToClient(const GenericResponseMessage &response, int clientSocketFD);
+    static bool sendResponse(const GenericResponse &response, int clientSocketFD);
 
-    static GenericResponseMessage *executeRequest(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeGenericRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeLoginRequest(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeLoginRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeLogoutRequest(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeLogoutRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeQuery(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeQuery(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executePairRequest(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executePairRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeUnpairRequest(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeUnpairRequest(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeSendNews(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeSendNews(ClientInformation *clientInformation, Document *document);
 
-    static GenericResponseMessage *executeCheckNews(ClientInformation *clientInformation, Document *document);
+    static GenericResponse *executeCheckNews(ClientInformation *clientInformation, Document *document);
 
     static void disconnectInactiveClients();
 
@@ -91,4 +88,4 @@ private:
 };
 
 
-#endif //SHAREDPADSERVER_SERVER_H
+#endif //SERVER_H

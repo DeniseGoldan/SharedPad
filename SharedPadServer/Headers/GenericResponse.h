@@ -1,16 +1,16 @@
-#ifndef SHAREDPADSERVER_GENERICMESSAGE_H
-#define SHAREDPADSERVER_GENERICMESSAGE_H
+#ifndef SERVER_GENERIC_RESPONSE_H
+#define SERVER_GENERIC_RESPONSE_H
 
 #include <string>
 
 using namespace std;
 
-class GenericResponseMessage
+class GenericResponse
 {
 public:
-    GenericResponseMessage();
+    GenericResponse();
 
-    virtual ~GenericResponseMessage();
+    ~GenericResponse();
 
     int getCode() const;
 
@@ -32,10 +32,6 @@ public:
 
     void setUsername(const string &user);
 
-    int getLine() const;
-
-    void setLine(int line);
-
     const string &getContent() const;
 
     void setContent(const string &content);
@@ -46,9 +42,8 @@ private:
     string username;
     string sender;
     string receiver;
-    int line = -1;
     string content;
 };
 
 
-#endif //SHAREDPADSERVER_GENERICMESSAGE_H
+#endif //SERVER_GENERIC_RESPONSE_H

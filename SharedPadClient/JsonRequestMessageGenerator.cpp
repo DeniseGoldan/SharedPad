@@ -117,7 +117,7 @@ string JsonRequestMessageGenerator::getJsonSyncRequestMessage(const GenericReque
     writer.Key(CONTENT);
     if (message.getContent().empty())
     {
-        writer.Null();
+        writer.String(" ");
     }
     else
     {

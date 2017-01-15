@@ -31,7 +31,12 @@ void *QuerySender::handleUpdating(void *argument)
 
     while(true)
     {
-        Client::sendRequestToServer(jsonUpdateRequest);
+        GenericResponseMessage* response = Client::sendRequestToServer(jsonUpdateRequest);
+        if (response->getCode() == CONNECTION_FAILED_CODE)
+        {
+            handleUpdating_logger->critical("-----SERVER CRASHED-----");
+            exit(EXIT_FAILURE);
+        }
         sleep(5);
     }
 }

@@ -1,14 +1,15 @@
-#ifndef SHAREDPADSERVER_ERRORHANDLER_H
-#define SHAREDPADSERVER_ERRORHANDLER_H
+#ifndef SERVER_ERROR_HANDLER_H
+#define SERVER_ERROR_HANDLER_H
 
 #include <cstdio>
 #include <cstdlib>
 
-class ErrorHandler {
+class ErrorHandler
+{
 public:
     static void handleErrorWithoutExit(const char *errorMessage);
 
     static void exitFailure(const char *errorMessage);
 };
 
-#endif //SHAREDPADSERVER_ERRORHANDLER_H
+#endif //SERVER_ERROR_HANDLER_H

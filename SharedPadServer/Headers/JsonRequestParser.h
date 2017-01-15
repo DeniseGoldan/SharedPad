@@ -1,5 +1,5 @@
-#ifndef SHAREDPADSERVER_JSONMESSAGEPARSER_H
-#define SHAREDPADSERVER_JSONMESSAGEPARSER_H
+#ifndef SERVER_JSON_REQUEST_PARSER
+#define SERVER_JSON_REQUEST_PARSER
 
 #include "../include/rapidjson/document.h"
 #include "../include/spdlog/spdlog.h"
@@ -8,14 +8,15 @@
 
 using namespace rapidjson;
 
-class JsonRequestMessageParser {
+class JsonRequestParser
+{
 public:
-    static Document *parseJsonMessage(const char *jsonMessage);
+    static Document *parseJson(const char *json);
 
 private:
-    JsonRequestMessageParser();
+    JsonRequestParser();
 
     static bool argumentsCorrespondToCommand(const char *command, const Document &document);
 };
 
-#endif //SHAREDPADSERVER_JSONMESSAGEPARSER_H
+#endif //SERVER_JSON_REQUEST_PARSER

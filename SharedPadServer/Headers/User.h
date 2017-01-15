@@ -11,11 +11,7 @@ using namespace std;
 class User {
 public:
 
-    void setAddress(const sockaddr_in &address);
-
     void updateLastCheck(const timeval &lastCheck);
-
-    const sockaddr_in &getAddress() const;
 
     const timeval &getLastCheck() const;
 
@@ -28,7 +24,6 @@ public:
     void setHasFileContentFromPeer(bool hasFileContentFromPeer);
 
 private:
-    sockaddr_in address;
     timeval lastCheck;
     string peerFileContent;
     bool hasFileContentFromPeer;

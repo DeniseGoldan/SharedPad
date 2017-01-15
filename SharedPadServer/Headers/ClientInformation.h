@@ -1,10 +1,11 @@
-#ifndef SHAREDPADSERVER_CLIENT_H
-#define SHAREDPADSERVER_CLIENT_H
+#ifndef SERVER_CLIENT_INFORMATION_H
+#define SERVER_CLIENT_INFORMATION_H
 
 #include <netinet/in.h>
 #include <string.h>
 
-class ClientInformation {
+class ClientInformation
+{
 public:
     ClientInformation();
 
@@ -13,4 +14,4 @@ public:
     int clientSocketFD;
 };
 
-#endif //SHAREDPADSERVER_CLIENT_H
+#endif //SERVER_CLIENT_INFORMATION_H

@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QTime>
 #include <QEvent>
+#include <QCloseEvent>
 #include <QKeyEvent>
 #include <QTextStream>
 #include <QThread>
@@ -40,7 +41,8 @@ public:
     QString getUsername();
     void check();
     bool eventFilter(QObject *object, QEvent *event);
-
+    bool okToContinue();
+    void closeEvent(QCloseEvent *event);
 
 public slots:
     void handleReceiveFileFromPartner(QString content);
@@ -52,7 +54,6 @@ private slots:
      void logout();
      void OnPairButtonPressed();
      void OnUnpairButtonPressed();
-     void OnSyncronizeButtonPressed();
 
 private:
     Ui::NotepadWindow *ui;

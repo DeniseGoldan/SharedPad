@@ -17,7 +17,6 @@
 #include "GenericRequestMessage.h"
 #include "GenericResponseMessage.h"
 #include "StatusCodesAndDescriptions.h"
-#include "ErrorHandler.h"
 
 namespace spd = spdlog;
 using namespace rapidjson;
@@ -30,8 +29,8 @@ public:
     static int establishConnection();
     static GenericResponseMessage* login(string username);
     static GenericResponseMessage* pair(string sender, string receiver);
-    static GenericResponseMessage * synchronize(string username, string content);
-    static GenericResponseMessage * sendRequestToServer(string jsonRequest);
+    static GenericResponseMessage* synchronize(string username, string content);
+    static GenericResponseMessage* sendRequestToServer(string jsonRequest);
 
 private:
     static sockaddr_in serverConfiguration;

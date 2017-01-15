@@ -16,7 +16,6 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
 
     connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(OnPairButtonPressed()));
     connect(ui->unpairButton, SIGNAL(clicked()), this, SLOT (OnUnpairButtonPressed()));
-    connect(ui->syncronizeButton, SIGNAL(clicked()), this, SLOT (OnSyncronizeButtonPressed()));
 
     openAction = new QAction(tr("&Open file"), this);
     openAction->setShortcuts(QKeySequence::Open);
@@ -37,6 +36,34 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     fileMenu->addAction(saveAction);
     fileMenu->addSeparator();
     fileMenu->addAction(logoutAction);
+}
+
+bool NotepadWindow::okToContinue()
+{
+    QMessageBox confirm;
+    confirm.setText(tr("Are you sure you want to exit the application?"));
+    confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    confirm.setDefaultButton(QMessageBox::No);
+
+    if(confirm.exec() == QMessageBox::No)
+    {
+        return false;
+    }
+    return true;
+}
+
+void NotepadWindow::closeEvent(QCloseEvent *event)
+{
+    if (okToContinue())
+    {
+        GenericRequestMessage logoutRequest;
+        logoutRequest.setCommand(LOGOUT);
+        logoutRequest.setUsername(username.toStdString());
+        string jsonLogoutRequest = JsonRequestMessageGenerator::getJsonLogRequestMessage(logoutRequest);
+        Client::sendRequestToServer(jsonLogoutRequest);
+        exit(EXIT_SUCCESS);
+    }
+    event->ignore();
 }
 
 bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
@@ -96,6 +123,11 @@ void NotepadWindow::OnPairButtonPressed()
             ui->peerUsernameTag->setText(peerUsername);
             break;
         }
+        case CONNECTION_FAILED_CODE:
+        {
+            QMessageBox::critical(this,"Error","Server failed.");
+            exit(EXIT_FAILURE);
+        }
         default:
         {
             QMessageBox::information(this,"Pair not approved!","Sorry...");
@@ -125,34 +157,6 @@ void NotepadWindow::OnUnpairButtonPressed()
     Client::sendRequestToServer(jsonLogoutRequest);
 
     ui->peerUsernameTag->setText("");
-}
-
-void NotepadWindow::OnSyncronizeButtonPressed()
-{
-    QString peerUsername = ui->peerUsernameTag->text();
-    sync_logger->warn(peerUsername.toStdString());
-    if (peerUsername.isNull())
-    {
-        QMessageBox::information(this, tr("Error message"), "You must have a peer. Check if you have a peer or send a request!");
-        return;
-    }
-
-    Client * client = new Client();
-    GenericResponseMessage * responseFromServer = client->synchronize(username.toStdString(), ui->textEdit->toPlainText().toStdString());
-
-    switch(responseFromServer->getCode())
-    {
-    case YOU_ARE_SINGLE_CODE :
-    {
-        QMessageBox::information(this,"Error message","You do not have a pair.");
-        break;
-    }
-    case SENT_NEWS_TO_PEER_CODE:
-    {
-        QMessageBox::information(this,"Information","You and you peer now share the same text content.");
-        break;
-    }
-    }
 }
 
 void NotepadWindow::check()

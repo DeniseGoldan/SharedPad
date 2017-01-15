@@ -1,8 +1,8 @@
-#include "../Headers/JsonResponseMessageGenerator.h"
+#include "../Headers/JsonResponseGenerator.h"
 
-JsonResponseMessageGenerator::JsonResponseMessageGenerator(){}
+JsonResponseGenerator::JsonResponseGenerator(){}
 
-string JsonResponseMessageGenerator::getJsonBasicResponseMessage(const GenericResponseMessage &response)
+string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
 {
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);

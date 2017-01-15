@@ -54,16 +54,6 @@ void GenericResponseMessage::setUsername(const string &user)
     this->username = user;
 }
 
-int GenericResponseMessage::getLine() const
-{
-    return line;
-}
-
-void GenericResponseMessage::setLine(int line)
-{
-    this->line = line;
-}
-
 const string &GenericResponseMessage::getContent() const
 {
     return content;

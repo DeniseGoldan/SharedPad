@@ -13,7 +13,6 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-    ErrorHandler.cpp \
     GenericRequestMessage.cpp \
     GenericResponseMessage.cpp \
     JsonResponseMessageParser.cpp \
@@ -24,7 +23,6 @@ SOURCES += main.cpp\
     NotepadWindow.cpp \
     QuerySender.cpp \
     Client.cpp \
-    ClientHelper.cpp \
     Worker.cpp
 
 HEADERS  += \
@@ -57,7 +55,6 @@ HEADERS  += \
     rapidjson/reader.h \
     rapidjson/stringbuffer.h \
     rapidjson/writer.h \
-    ErrorHandler.h \
     GenericRequestMessage.h \
     GenericResponseMessage.h \
     JsonResponseMessageParser.h \
@@ -107,7 +104,6 @@ HEADERS  += \
     StatusCodesAndDescriptions.h \
     QuerySender.h \
     Client.h \
-    ClientHelper.h \
     Worker.h
 
 FORMS    += \

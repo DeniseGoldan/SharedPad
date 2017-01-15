@@ -4,20 +4,20 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/Headers/ClientInformation.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/StatusCodesAndDescriptions.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Headers/JsonResponseMessageGenerator.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Headers/GenericResponseMessage.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Headers/JsonRequestParser.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/Server.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/ErrorHandler.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Headers/User.h" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Headers/JsonRequestMessageParser.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Headers/JsonResponseGenerator.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Headers/GenericResponse.h" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/Server.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Sources/GenericResponseMessage.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Sources/JsonRequestMessageParser.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Sources/GenericResponse.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/main.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/ErrorHandler.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Sources/JsonResponseGenerator.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/ClientInformation.cpp" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Sources/JsonResponseMessageGenerator.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Sources/User.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Sources/JsonRequestParser.cpp" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/logs" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/include" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
