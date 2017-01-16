@@ -164,7 +164,7 @@ void NotepadWindow::onPairButtonPressed()
         }
         default:
         {
-            QMessageBox::information(this,"Error!","Unexpected...");
+            QMessageBox::information(this,"Not approved!","Server crashed.");
             break;
         }
         }

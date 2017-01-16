@@ -44,8 +44,24 @@ void LoginWindow::onLoginButtonPressed()
         }
         case CONNECTION_FAILED_CODE:
         {
-            QMessageBox::critical(this,"Error","Server failed.");
-            exit(EXIT_FAILURE);
+            QMessageBox msgBox(QMessageBox::Question,
+                               tr("Server crashed"),
+                               "How do you wish to proceed?",
+                               QMessageBox::Yes | QMessageBox::No);
+
+            msgBox.setButtonText(QMessageBox::Yes, tr("Edit offline"));
+            msgBox.setButtonText(QMessageBox::No, tr("Exit application"));
+            if(msgBox.exec() == QMessageBox::Yes)
+            {
+                notepadWindow = new NotepadWindow(this);
+                notepadWindow->setUsername(username);
+                notepadWindow->show();
+            }
+            else
+            {
+                exit(EXIT_SUCCESS);
+
+            }
         }
         }
     }
