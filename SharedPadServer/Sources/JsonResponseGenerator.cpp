@@ -17,7 +17,6 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
     {
         writer.Int(response.getCode());
     }
-
     writer.Key(CODE_DESCRIPTION);
     if (response.getCodeDescription().empty())
     {
@@ -27,7 +26,6 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
     {
         writer.String(response.getCodeDescription().c_str());
     }
-
     writer.Key(USERNAME);
     if (response.getUsername().empty())
     {
@@ -37,7 +35,6 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
     {
         writer.String(response.getUsername().c_str());
     }
-
     writer.Key(SENDER);
     if (response.getSender().empty())
     {
@@ -47,7 +44,6 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
     {
         writer.String(response.getSender().c_str());
     }
-
     writer.Key(RECEIVER);
     if (response.getReceiver().empty())
     {
@@ -57,7 +53,6 @@ string JsonResponseGenerator::getJsonResponse(const GenericResponse &response)
     {
         writer.String(response.getReceiver().c_str());
     }
-
     writer.Key(CONTENT);
     if (response.getContent().empty())
     {

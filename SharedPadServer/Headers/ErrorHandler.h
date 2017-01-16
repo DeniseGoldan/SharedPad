@@ -7,8 +7,6 @@
 class ErrorHandler
 {
 public:
-    static void handleErrorWithoutExit(const char *errorMessage);
-
     static void exitFailure(const char *errorMessage);
 };
 

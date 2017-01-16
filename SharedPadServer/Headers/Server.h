@@ -72,6 +72,10 @@ private:
 
     static bool sendResponse(const GenericResponse &response, int clientSocketFD);
 
+    static int getBytesToReadInCurrentSession(int total);
+
+    static char *getPrefixedJson(const GenericResponse &response);
+
     // Server's disconnecting service
 
     static void startDisconnectingService();
@@ -110,9 +114,6 @@ private:
 
     static void *terminateThread();
 
-    static int getBytesToReadInCurrentSession(int total);
-
-    static char *getPrefixedJson(const GenericResponse &response);
 };
 
 

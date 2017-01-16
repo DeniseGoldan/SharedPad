@@ -1,5 +1,4 @@
 #include "NotepadWindow.h"
-#include "NewsChecker.h"
 #include "ui_NotepadWindow.h"
 
 auto pair_logger = spd::stdout_color_mt("pair_logger");
@@ -97,7 +96,9 @@ bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
     if (object == ui->textEdit && event->type() == QEvent::KeyPress)
     {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-        if (keyEvent->matches(QKeySequence::SelectAll) || keyEvent->matches(QKeySequence::Copy) || keyEvent->matches(QKeySequence::Paste))
+        if (keyEvent->matches(QKeySequence::SelectAll)
+                || keyEvent->matches(QKeySequence::Copy)
+                || keyEvent->matches(QKeySequence::Paste))
         {
             return true;
         }
@@ -149,19 +150,16 @@ void NotepadWindow::onPairButtonPressed()
         case INVITED_YOURSELF_CODE :
         {
             QMessageBox::information(this,"Not approved!","You can't invite yourself.");
-            ui->peerUsernameTag->setText("...you do not have a pair");
             break;
         }
         case ALREADY_PAIRED_CODE :
         {
             QMessageBox::information(this,"Not approved!","You already have a pair.");
-            ui->peerUsernameTag->setText("...you do not have a pair");
             break;
         }
         case USER_NOT_LOGGED_IN_CODE :
         {
             QMessageBox::information(this,"Not approved!","The receiver is not logged in.");
-            ui->peerUsernameTag->setText("...you do not have a pair");
             break;
         }
         default:
@@ -200,7 +198,7 @@ void NotepadWindow::onUnpairButtonPressed()
 **/
 void NotepadWindow::check()
 {
-    QThread *thread = new QThread;
+    thread = new QThread;
     NewsChecker * worker = new NewsChecker(username.toStdString());
 
     QObject::connect(thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
@@ -226,6 +224,8 @@ void NotepadWindow::handleReceivePeerUsername(QString peerUsername)
 
 void NotepadWindow::handleServerCrashed()
 {
+    ui->peerUsernameTag->setText("...you can't choose a pair");
+    thread->terminate();
     if (announced == false)
     {
         announced = true;

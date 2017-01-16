@@ -54,7 +54,6 @@ void Server::startListeningSession()
         ClientInformation *currentClient = new ClientInformation();
         currentClient->clientSocketFD = accept(serverSocketFD,
                                                (sockaddr *) &currentClient->address, &currentClient->addressLength);
-
         if (-1 == currentClient->clientSocketFD)
         {
             startListeningSession_logger->warn("Accepting client failed.");
@@ -207,7 +206,7 @@ GenericResponse *Server::executeHeartbeatConfirmation(const Document *document)
         timeval now; gettimeofday(&now, NULL);
         loggedUsers->at(username).updateLastCheck(now);
 
-        heartbeat_logger->warn("heartbeat");
+        heartbeat_logger->warn("HEARTBEAT CONFIRMATION");
         heartbeat_logger->warn(username);
 
         return SpecializedResponse::getHeartBeatApprovedResponse();

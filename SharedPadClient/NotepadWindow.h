@@ -17,6 +17,7 @@
 #include "GenericRequest.h"
 #include "JsonRequestGenerator.h"
 #include "StatusCodesAndDescriptions.h"
+#include "NewsChecker.h"
 #include "Client.h"
 
 class QPushButton;
@@ -85,6 +86,7 @@ private:
     QAction *openAction;
     QAction *saveAction;
     QAction *logoutAction;
+    QThread *thread;
 };
 
 #endif // CLIENT_NOTEPADWINDOW_H
