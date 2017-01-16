@@ -4,8 +4,8 @@
 
 auto pair_logger = spd::stdout_color_mt("pair_logger");
 auto checkNews_logger = spd::stdout_color_mt("checkNews_logger");
-auto handleReceiverFile_logger = spd::stdout_color_mt("handleReceiverFile_logger");
-auto sync_logger = spd::stdout_color_mt("sync_logger");
+auto handleReceiveNews_logger = spd::stdout_color_mt("handleReceiveNews_logger");
+auto typing_logger = spd::stdout_color_mt("typing_logger");
 
 NotepadWindow::NotepadWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -13,13 +13,39 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->textEdit->installEventFilter(this);
+    configureButtons();
+    configureFileMenuActions();
+    configureFileMenu();
+}
 
+NotepadWindow::~NotepadWindow()
+{
+    delete ui;
+}
+
+QString NotepadWindow::getUsername()
+{
+    return username;
+}
+
+void NotepadWindow::setUsername(QString username)
+{
+    this->username = username;
+    ui->usernameTag->setText(username);
+    check();
+}
+
+void NotepadWindow::configureButtons()
+{
     connect(ui->pairButton, SIGNAL(clicked()), this, SLOT(onPairButtonPressed()));
     connect(ui->unpairButton, SIGNAL(clicked()), this, SLOT (onUnpairButtonPressed()));
+}
 
+void NotepadWindow::configureFileMenuActions()
+{
     openAction = new QAction(tr("&Open file"), this);
     openAction->setShortcuts(QKeySequence::Open);
-    openAction->setStatusTip(tr("Open an existing file"));
+    openAction->setStatusTip(tr("Open an existing file from your computer"));
     connect(openAction, SIGNAL(triggered()), this, SLOT(openFile()));
 
     saveAction = new QAction(tr("&Save file"), this);
@@ -30,7 +56,10 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     logoutAction = new QAction(tr("&Logout"), this);
     logoutAction->setStatusTip(tr("Logout and exit the application"));
     connect(logoutAction, SIGNAL(triggered()), this, SLOT(logout()));
+}
 
+void NotepadWindow::configureFileMenu()
+{
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(openAction);
     fileMenu->addAction(saveAction);
@@ -38,32 +67,29 @@ NotepadWindow::NotepadWindow(QWidget *parent) :
     fileMenu->addAction(logoutAction);
 }
 
-bool NotepadWindow::okToContinue()
+void NotepadWindow::closeEvent(QCloseEvent *event)
+{
+    if (okToClose())
+    {
+        GenericRequest* logoutRequest = SpecializedRequest::getLogoutRequest(username.toStdString());
+        string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(*logoutRequest);
+        Client::sendRequest(jsonLogoutRequest);
+        exit(EXIT_SUCCESS);
+    }
+    event->ignore();
+}
+
+bool NotepadWindow::okToClose()
 {
     QMessageBox confirm;
     confirm.setText(tr("Are you sure you want to exit the application?"));
     confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     confirm.setDefaultButton(QMessageBox::No);
-
     if(confirm.exec() == QMessageBox::No)
     {
         return false;
     }
     return true;
-}
-
-void NotepadWindow::closeEvent(QCloseEvent *event)
-{
-    if (okToContinue())
-    {
-        GenericRequest logoutRequest;
-        logoutRequest.setCommand(LOGOUT);
-        logoutRequest.setUsername(username.toStdString());
-        string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(logoutRequest);
-        Client::sendRequest(jsonLogoutRequest);
-        exit(EXIT_SUCCESS);
-    }
-    event->ignore();
 }
 
 bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
@@ -79,7 +105,7 @@ bool NotepadWindow::eventFilter(QObject *object, QEvent *event)
         {
             if (keyEvent->text().length() != 0)
             {
-                sync_logger->warn(keyEvent->text().toStdString().c_str());
+                typing_logger->warn(keyEvent->text().toStdString().c_str());
                 Client::sendNews(username.toStdString(), ui->textEdit->toPlainText().toStdString());
                 return QWidget::eventFilter(object,event);
             }
@@ -94,15 +120,13 @@ void NotepadWindow::onPairButtonPressed()
     QString peerUsername =  ui->peerSelectLineEdit->text();
     pair_logger->warn(sender.toStdString());
     pair_logger->warn(peerUsername.toStdString());
-
     if (peerUsername.isEmpty())
     {
         QMessageBox::information(this, tr("Error message"), "Peer username can't be blank!");
     }
     else
     {
-        Client * client = new Client();
-        GenericResponse * responseFromServer = client->pair(sender.toStdString(), peerUsername.toStdString());
+        GenericResponse * responseFromServer = Client::pair(sender.toStdString(), peerUsername.toStdString());
         pair_logger->warn(responseFromServer->getCode());
         pair_logger->warn(responseFromServer->getCodeDescription());
 
@@ -122,36 +146,58 @@ void NotepadWindow::onPairButtonPressed()
             ui->peerUsernameTag->setText(peerUsername);
             break;
         }
+        case INVITED_YOURSELF_CODE :
+        {
+            QMessageBox::information(this,"Not approved!","You can't invite yourself.");
+            ui->peerUsernameTag->setText("...you do not have a pair");
+            break;
+        }
+        case ALREADY_PAIRED_CODE :
+        {
+            QMessageBox::information(this,"Not approved!","You already have a pair.");
+            ui->peerUsernameTag->setText("...you do not have a pair");
+            break;
+        }
+        case USER_NOT_LOGGED_IN_CODE :
+        {
+            QMessageBox::information(this,"Not approved!","The receiver is not logged in.");
+            ui->peerUsernameTag->setText("...you do not have a pair");
+            break;
+        }
         default:
         {
-            QMessageBox::information(this,"Not approved!","Sorry...");
+            QMessageBox::information(this,"Error!","Unexpected...");
             break;
         }
         }
     }
 }
+
 void NotepadWindow::onUnpairButtonPressed()
 {
     QMessageBox confirm;
     confirm.setText(tr("You are going to unpair from your collaborator. Do you wish to proceed?"));
     confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     confirm.setDefaultButton(QMessageBox::No);
-
     if(confirm.exec() == QMessageBox::No)
     {
         return;
     }
-
-    GenericRequest unpairRequest;
-    unpairRequest.setCommand(UNPAIR);
-    unpairRequest.setUsername(username.toStdString());
-
-    string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(unpairRequest);
+    GenericRequest * unpairRequest = SpecializedRequest::getUnpairRequest(username.toStdString());
+    string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(*unpairRequest);
     Client::sendRequest(jsonLogoutRequest);
-
     ui->peerUsernameTag->setText("");
 }
 
+/**
+ * Each notepad has a worker that constantly asks the server for updates. These updates can be either:
+ * - a "server has crashed" update
+ * - a "you have news from your peer" update
+ * - a "you have a collaborator (or peer)" update
+ * - a "you do not have a collaborator" update
+ * The worker sends a signal, letting its notepad know about the update, and letting it handle the update,
+ * using one of the handle functions available.
+**/
 void NotepadWindow::check()
 {
     QThread *thread = new QThread;
@@ -198,8 +244,11 @@ void NotepadWindow::handleServerCrashed()
     }
 }
 
-void NotepadWindow::openFile(){
-
+/**
+ * File menu actions
+**/
+void NotepadWindow::openFile()
+{
     if (ui->textEdit->toPlainText() != nullptr)
     {
         QMessageBox confirm;
@@ -231,7 +280,6 @@ void NotepadWindow::openFile(){
         confirm.setText(tr("No file has been selected."));
         confirm.setStandardButtons(QMessageBox::Ok | QMessageBox::Retry);
         confirm.setDefaultButton(QMessageBox::Retry);
-
         if(confirm.exec() == QMessageBox::Retry)
         {
             openFile();
@@ -239,7 +287,8 @@ void NotepadWindow::openFile(){
     }
 }
 
-void NotepadWindow::saveFile(){
+void NotepadWindow::saveFile()
+{
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save file"), QString(), tr("Text Files (*.txt)"));
     if (!fileName.isEmpty())
     {
@@ -260,8 +309,8 @@ void NotepadWindow::saveFile(){
     }
 }
 
-void NotepadWindow::logout(){
-
+void NotepadWindow::logout()
+{
     if (ui->textEdit->toPlainText() != nullptr)
     {
         QMessageBox confirm;
@@ -274,29 +323,10 @@ void NotepadWindow::logout(){
             return;
         }
     }
-
-    GenericRequest logoutRequest;
-    logoutRequest.setCommand(LOGOUT);
-    logoutRequest.setUsername(username.toStdString());
-
-    string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(logoutRequest);
+    GenericRequest *logoutRequest = SpecializedRequest::getLogoutRequest(username.toStdString());
+    string jsonLogoutRequest = JsonRequestGenerator::getJsonLogRequest(*logoutRequest);
     Client::sendRequest(jsonLogoutRequest);
 
     this->hide();
     exit(EXIT_SUCCESS);
-}
-
-void NotepadWindow::setUsername(QString username){
-    this->username = username;
-    ui->usernameTag->setText(username);
-    check();
-}
-
-QString NotepadWindow::getUsername(){
-    return username;
-}
-
-NotepadWindow::~NotepadWindow()
-{
-    delete ui;
 }

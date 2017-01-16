@@ -16,7 +16,7 @@ class JsonResponseParser
 {
 public:
     JsonResponseParser();
-    static Document * parseJsonMessage(const char * jsonMessage);
+    static Document * parseJson(const char * jsonMessage);
 
 private:
     static bool codeMatchesContent(int code, const Document &document);

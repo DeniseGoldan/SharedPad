@@ -9,24 +9,14 @@ const string &GenericRequest::getCommand() const
     return command;
 }
 
-const string &GenericRequest::getUsername() const
-{
-    return username;
-}
-
-const string &GenericRequest::getSender() const
-{
-    return sender;
-}
-
-const string &GenericRequest::getReceiver() const
-{
-    return receiver;
-}
-
 void GenericRequest::setCommand(const string &command)
 {
     this->command = command;
+}
+
+const string &GenericRequest::getUsername() const
+{
+    return username;
 }
 
 void GenericRequest::setUsername(const string &username)
@@ -34,9 +24,19 @@ void GenericRequest::setUsername(const string &username)
     this->username = username;
 }
 
+const string &GenericRequest::getSender() const
+{
+    return sender;
+}
+
 void GenericRequest::setSender(const string &sender)
 {
     this->sender = sender;
+}
+
+const string &GenericRequest::getReceiver() const
+{
+    return receiver;
 }
 
 void GenericRequest::setReceiver(const string &receiver)

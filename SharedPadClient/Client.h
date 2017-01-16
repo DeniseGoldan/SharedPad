@@ -42,6 +42,10 @@ public:
 
     static GenericResponse* getJsonParsingFailedResponse();
 
+    static char * getPrefixedJsonRequest(string jsonRequest, int length);
+
+    static int getBytesToReadInCurrentSession(int totalBytesLeftToRead);
+
 private:
     static sockaddr_in serverConfiguration;
     static const char * ip;

@@ -5,7 +5,7 @@ auto codeCorrespondsToContentlogger = spdlog::stdout_color_mt("codeCorrespondsTo
 
 JsonResponseParser::JsonResponseParser(){}
 
-Document *JsonResponseParser::parseJsonMessage(const char *jsonMessage)
+Document *JsonResponseParser::parseJson(const char *jsonMessage)
 {
     //This variable will exist only inside this scope, in the stack.
     Document stackDocument;

@@ -20,16 +20,16 @@ Document *JsonRequestParser::parseJson(const char *jsonMessage)
         parseJsonMessage_logger->warn("The stackDocument has the COMMAND or ARGUMENTS missing.");
         return nullptr;
     }
+    if (!stackDocument.IsObject() || !stackDocument[COMMAND].IsString() || !stackDocument[ARGUMENTS].IsObject())
+    {
+        parseJsonMessage_logger->warn("The stackDocument has got a mismatch between the expected type and the actual type of the blocks.");
+        return nullptr;
+    }
     if (stackDocument[COMMAND].IsNull())
     {
         parseJsonMessage_logger->warn("The stackDocument has the COMMAND member equal to null.");
         return nullptr;
     }
-    if (!stackDocument.IsObject() || !stackDocument[COMMAND].IsString() || !stackDocument[ARGUMENTS].IsObject())
-    {
-        parseJsonMessage_logger->warn("The stackDocument has got a mismatch between the expected type and the actual type of the blocks.");
-        return nullptr; }
-
     if (!JsonRequestParser::argumentsMatchCommand(stackDocument[COMMAND].GetString(), stackDocument))
     {
         parseJsonMessage_logger->warn("The provided arguments do not correspond to the COMMAND.");
@@ -47,7 +47,11 @@ Document *JsonRequestParser::parseJson(const char *jsonMessage)
 bool JsonRequestParser::argumentsMatchCommand(const char *command, const Document &document)
 {
     // LOGIN, LOGOUT, HEARTBEAT, CHECK_NEWS
-    if (command == LOGIN || command == LOGOUT || command == UNPAIR || command == HEARTBEAT || command == CHECK_NEWS)
+    if (command == LOGIN
+        || command == LOGOUT
+        || command == UNPAIR
+        || command == HEARTBEAT
+        || command == CHECK_NEWS)
     {
         if (!document[ARGUMENTS].HasMember(USERNAME) || !document[ARGUMENTS][USERNAME].IsString())
         {

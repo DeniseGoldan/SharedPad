@@ -68,7 +68,7 @@ private:
 
     static int readJsonRequestLength(const ClientInformation *currentClient);
 
-    static char *readJsonRequest(const ClientInformation *currentClient, int jsonRequestLength);
+    static char *readJsonRequest(const ClientInformation *currentClient, int jsonLength);
 
     static bool sendResponse(const GenericResponse &response, int clientSocketFD);
 
@@ -110,6 +110,9 @@ private:
 
     static void *terminateThread();
 
+    static int getBytesToReadInCurrentSession(int total);
+
+    static char *getPrefixedJson(const GenericResponse &response);
 };
 
 

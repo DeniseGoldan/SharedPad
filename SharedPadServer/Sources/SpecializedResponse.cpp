@@ -49,7 +49,6 @@ GenericResponse *SpecializedResponse::getUserNotLoggedInResponse()
     return response;
 }
 
-
 GenericResponse *SpecializedResponse::getInvitedYourselfResponse()
 {
     GenericResponse *response = new GenericResponse();
@@ -81,7 +80,6 @@ GenericResponse *SpecializedResponse::getYourAreSingleResponse()
     response->setCodeDescription(YOU_ARE_SINGLE);
     return response;
 }
-
 
 GenericResponse *SpecializedResponse::getSentNewsToPeerResponse()
 {

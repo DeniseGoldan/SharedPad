@@ -10,11 +10,8 @@ NewsChecker::~NewsChecker() {}
 
 void NewsChecker::checkInbox()
 {
-    GenericRequest checkRequest;
-    checkRequest.setCommand(CHECK_NEWS);
-    checkRequest.setUsername(username);
-    string jsonCheckRequest = JsonRequestGenerator::getJsonLogRequest(checkRequest);
-
+    GenericRequest *checkNewsRequest = SpecializedRequest::getCheckNewsRequest(username);
+    string jsonCheckRequest = JsonRequestGenerator::getJsonLogRequest(*checkNewsRequest);
     while (1)
     {
         GenericResponse *response = Client::sendRequest(jsonCheckRequest);

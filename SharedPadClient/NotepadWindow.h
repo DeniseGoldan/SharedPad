@@ -35,30 +35,50 @@ class NotepadWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    bool announced = false;
-
     explicit NotepadWindow(QWidget *parent = 0);
+
     ~NotepadWindow();
+
     QString getUsername();
+
     void setUsername(QString username);
+
     void check();
+
     bool eventFilter(QObject *object, QEvent *event);
-    bool okToContinue();
+
+    bool okToClose();
+
     void closeEvent(QCloseEvent *event);
+
+    void configureFileMenuActions();
+
+    void configureFileMenu();
+
+    void configureButtons();
+
+    void configureNotepad();
 
 public slots:
     void handleReceiveNewsFromPeer(QString news);
+
     void handleReceivePeerUsername(QString peerUsername);
+
     void handleServerCrashed();
 
 private slots:
      void openFile();
+
      void saveFile();
+
      void logout();
+
      void onPairButtonPressed();
+
      void onUnpairButtonPressed();
 
 private:
+    bool announced = false;
     QString username;
     Ui::NotepadWindow *ui;
     QMenu *fileMenu;

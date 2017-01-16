@@ -61,10 +61,7 @@ GenericResponse *Client::sendRequest(string jsonRequest){
     }
 
     int length = (int) jsonRequest.length();
-    char *prefixedJsonRequest = (char *) malloc((size_t) (PREFIX_LENGTH + length + 1));
-    memset(prefixedJsonRequest, 0, sizeof(char) *(PREFIX_LENGTH + length + 1));
-    sprintf(prefixedJsonRequest, "%d\n%s", length, jsonRequest.c_str());
-    sendRequest_logger->info(prefixedJsonRequest);
+    char *prefixedJsonRequest = getPrefixedJsonRequest(jsonRequest, length);
 
     sendRequest_logger->info("Preparing to write the request into the socket.");
     int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonRequest);
@@ -102,7 +99,7 @@ GenericResponse *Client::sendRequest(string jsonRequest){
     sendRequest_logger->info("Reading the response from the server. The response is:");
     sendRequest_logger->info(responseFromServer);
 
-    Document *jsonDocument = JsonResponseParser::parseJsonMessage(responseFromServer);
+    Document *jsonDocument = JsonResponseParser::parseJson(responseFromServer);
     free(responseFromServer);
     if (jsonDocument == nullptr)
     {
@@ -122,6 +119,16 @@ GenericResponse *Client::sendRequest(string jsonRequest){
 
     return response;
 }
+
+char * Client::getPrefixedJsonRequest(string jsonRequest, int length)
+{
+    char *prefixedJsonRequest = (char *) malloc((size_t) (PREFIX_LENGTH + length + 1));
+    memset(prefixedJsonRequest, 0, sizeof(char) *(PREFIX_LENGTH + length + 1));
+    sprintf(prefixedJsonRequest, "%d\n%s", length, jsonRequest.c_str());
+    sendRequest_logger->info(prefixedJsonRequest);
+    return prefixedJsonRequest;
+}
+
 
 int Client::readJsonResponseLength(int socketFD)
 {
@@ -169,11 +176,7 @@ char *Client::readJsonResponse(int socketFD, int jsonResponseLength)
 
     while (totalBytesLeftToRead > 0)
     {
-        int bytesToReadInCurrentSession;
-
-        (totalBytesLeftToRead < BUFF_SIZE) ?
-                    bytesToReadInCurrentSession = totalBytesLeftToRead :
-                bytesToReadInCurrentSession = BUFF_SIZE;
+        int bytesToReadInCurrentSession = Client::getBytesToReadInCurrentSession(totalBytesLeftToRead);
 
         count = (int) read(socketFD, jsonResponse + totalBytesRead,
                            (size_t) bytesToReadInCurrentSession);
@@ -206,6 +209,13 @@ char *Client::readJsonResponse(int socketFD, int jsonResponseLength)
     }
 
     return jsonResponse;
+}
+
+int Client::getBytesToReadInCurrentSession(int total)
+{
+    int number;
+    total < BUFF_SIZE ? number = total : number = BUFF_SIZE;
+    return number;
 }
 
 GenericResponse *Client::getWriteFailedResponse()

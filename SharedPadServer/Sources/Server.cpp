@@ -9,8 +9,8 @@ map<string, string> *Server::pairs;
 auto startListeningSession_logger = spd::stdout_color_mt("startListeningSession_logger");
 auto handleClient_logger = spd::stdout_color_mt("handleClient_logger");
 auto readJsonRequestLength_logger = spd::stdout_color_mt("readJsonRequestLength_logger");
-auto readJsonRequestFromClient_logger = spd::stdout_color_mt("readJsonRequestFromClient_logger");
-auto sendResponseToClient_logger = spd::stdout_color_mt("sendResponseToClient_logger");
+auto readJsonRequest_logger = spd::stdout_color_mt("readJsonRequest_logger");
+auto sendResponse_logger = spd::stdout_color_mt("sendResponse_logger");
 auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
 auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
 auto heartbeat_logger = spd::stdout_color_mt("heartbeat_logger");
@@ -257,13 +257,13 @@ GenericResponse *Server::executePairRequest(const Document *document)
         }
         else
         {
-            pairRequest_logger->info("receiver not logged in");
+            pairRequest_logger->info("Receiver not logged in");
             return SpecializedResponse::getUserNotLoggedInResponse();
         }
     }
     else
     {
-        pairRequest_logger->info("sender not logged in");
+        pairRequest_logger->info("Sender not logged in");
         return SpecializedResponse::getUserNotLoggedInResponse();
     }
 }
@@ -338,6 +338,40 @@ GenericResponse *Server::executeCheckNewsRequest(const Document *document)
 }
 
 /**
+ * The server has a disconnecting service that removes inactive clients based on their heartbeat coinfirmations.
+ * */
+void Server::startDisconnectingService()
+{
+    pthread_t threadId;
+    if (0 != pthread_create(&threadId, nullptr, Server::handleDisconnecting, nullptr))
+    {
+        ErrorHandler::exitFailure("Thread creation failed.\n");
+    }
+}
+
+void *Server::handleDisconnecting(void *)
+{
+    handleDisconnecting_logger->info("Inside function handleDisconnecting.");
+    while (true)
+    {
+        printLoggedUsers();
+        printPairs();
+        for (auto usersIT = loggedUsers->cbegin(); usersIT != loggedUsers->cend(); usersIT++)
+        {
+            timeval now; gettimeofday(&now, NULL);
+            if (now.tv_sec - usersIT->second.getLastCheck().tv_sec > 10)
+            {
+                loggedUsers->erase(usersIT);
+                removePairContainingUsername(usersIT->first.c_str());
+                handleDisconnecting_logger->info("Server erased an inactive client.");
+            }
+        }
+        handleDisconnecting_logger->info("Server's disconnecting service will wait for 10 seconds.");
+        sleep(10);
+    }
+}
+
+/**
  * Extracts and returns an integer that represents the <lenght> of the request.
  * */
 int Server::readJsonRequestLength(const ClientInformation *currentClient)
@@ -375,39 +409,34 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
 /**
  * Extracts and returns the <content> of the request based on the length obtained from readJsonRequestLength function.
  * */
-char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRequestLength)
+char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonLength)
 {
-    if (-1 == jsonRequestLength)
+    if (-1 == jsonLength)
     {
-        readJsonRequestFromClient_logger->warn("The length of the request is invalid.");
+        readJsonRequest_logger->warn("The length of the request is invalid.");
         return nullptr;
     }
 
-    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonRequestLength + 1;
-    char *jsonResponse = (char *) malloc(sizeof(char) * (jsonRequestLength + 2));
+    int totalBytesRead = 0, count = 0, totalBytesLeftToRead = jsonLength + 1;
+    char *jsonRequest = (char *) malloc(sizeof(char) * (jsonLength + 2));
+    int socketFD = currentClient->clientSocketFD;
 
     while (totalBytesLeftToRead > 0)
     {
-        int bytesToReadInCurrentSession;
-
-        (totalBytesLeftToRead < BUFF_SIZE) ?
-                bytesToReadInCurrentSession = totalBytesLeftToRead :
-                bytesToReadInCurrentSession = BUFF_SIZE;
-
-        count = (int) read(currentClient->clientSocketFD, jsonResponse + totalBytesRead,
-                           (size_t) bytesToReadInCurrentSession);
+        int bytesToReadInCurrentSession = getBytesToReadInCurrentSession(totalBytesLeftToRead);
+        count = (int) read(socketFD, jsonRequest + totalBytesRead, (size_t) bytesToReadInCurrentSession);
         switch (count)
         {
             case -1:
             {
-                close(currentClient->clientSocketFD);
-                readJsonRequestFromClient_logger->warn("Reading failed: -1 == count");
+                close(socketFD);
+                readJsonRequest_logger->warn("Reading failed: -1 == count");
                 return nullptr;
             }
             case 0:
             {
-                close(currentClient->clientSocketFD);
-                readJsonRequestFromClient_logger->warn("Reading failed: 0 == count");
+                close(socketFD);
+                readJsonRequest_logger->warn("Reading failed: 0 == count");
                 return nullptr;
             }
             default:
@@ -417,12 +446,19 @@ char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRe
             }
         }
     }
-    if (jsonResponse == nullptr)
+    if (jsonRequest == nullptr)
     {
-        readJsonRequestFromClient_logger->warn("Reading failed.");
+        readJsonRequest_logger->warn("Reading failed.");
         return nullptr;
     }
-    return jsonResponse;
+    return jsonRequest;
+}
+
+int Server::getBytesToReadInCurrentSession(int total)
+{
+    int number;
+    total < BUFF_SIZE ? number = total : number = BUFF_SIZE;
+    return number;
 }
 
 /**
@@ -431,32 +467,26 @@ char *Server::readJsonRequest(const ClientInformation *currentClient, int jsonRe
  * */
 bool Server::sendResponse(const GenericResponse &response, int clientSocketFD)
 {
-    string jsonResponse = JsonResponseGenerator::getJsonResponse(response);
-    int length = (int) jsonResponse.length();
-
-    char *prefixedJsonResponse = (char *) malloc(sizeof(char) * (PREFIX_LENGTH + length + 1));
-    memset(prefixedJsonResponse, 0, sizeof(char) *(PREFIX_LENGTH + length + 1));
-    sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
-
-    sendResponseToClient_logger->info("Preparing to write the response.");
-    int totalBytesLeftToSend = 1 + (int) strlen(prefixedJsonResponse);
+    char *prefixedJson = getPrefixedJson(response);
+    sendResponse_logger->info("Preparing to write the response.");
+    int totalBytesLeftToSend = 1 + (int) strlen(prefixedJson);
     int totalBytesSent = 0, count = 0;
 
     while (totalBytesLeftToSend > 0)
     {
-        count = (int) write(clientSocketFD, prefixedJsonResponse + totalBytesSent, BUFF_SIZE);
+        count = (int) write(clientSocketFD, prefixedJson + totalBytesSent, BUFF_SIZE);
         switch (count)
         {
             case -1:
             {
-                sendResponseToClient_logger->warn("Writing response failed: -1 == count");
-                free(prefixedJsonResponse);
+                sendResponse_logger->warn("Writing response failed: -1 == count");
+                free(prefixedJson);
                 return false;
             }
             case 0:
             {
-                sendResponseToClient_logger->warn("Writing response failed: 0 == count");
-                free(prefixedJsonResponse);
+                sendResponse_logger->warn("Writing response failed: 0 == count");
+                free(prefixedJson);
                 return false;
             }
             default:
@@ -466,42 +496,18 @@ bool Server::sendResponse(const GenericResponse &response, int clientSocketFD)
             }
         }
     }
-    free(prefixedJsonResponse);
+    free(prefixedJson);
     return true;
 }
 
-/**
- * The server has a disconnecting service that removes inactive clients based on their heartbeat coinfirmations.
- * */
-void Server::startDisconnectingService()
+char *Server::getPrefixedJson(const GenericResponse &response)
 {
-    pthread_t threadId;
-    if (0 != pthread_create(&threadId, nullptr, Server::handleDisconnecting, nullptr))
-    {
-        ErrorHandler::exitFailure("Thread creation failed.\n");
-    }
-}
-
-void *Server::handleDisconnecting(void *)
-{
-    handleDisconnecting_logger->info("Inside function handleDisconnecting.");
-    while (true)
-    {
-        printLoggedUsers();
-        printPairs();
-        for (auto usersIT = loggedUsers->cbegin(); usersIT != loggedUsers->cend(); usersIT++)
-        {
-            timeval now; gettimeofday(&now, NULL);
-            if (now.tv_sec - usersIT->second.getLastCheck().tv_sec > 10)
-            {
-                loggedUsers->erase(usersIT);
-                removePairContainingUsername(usersIT->first.c_str());
-                handleDisconnecting_logger->info("Server erased an inactive client.");
-            }
-        }
-        handleDisconnecting_logger->info("Server's disconnecting service will wait for 10 seconds.");
-        sleep(10);
-    }
+    string jsonResponse = JsonResponseGenerator::getJsonResponse(response);
+    int length = (int) jsonResponse.length();
+    char *prefixedJsonResponse = (char *) malloc(sizeof(char) * (PREFIX_LENGTH + length + 1));
+    memset(prefixedJsonResponse, 0, sizeof(char) *(PREFIX_LENGTH + length + 1));
+    sprintf(prefixedJsonResponse, "%d\n%s", length, jsonResponse.c_str());
+    return prefixedJsonResponse;
 }
 
 /**
@@ -528,7 +534,7 @@ void Server::printPairs()
 }
 
 /**
- * Utility functions  that deals with the 2 maps
+ * Utility functions that deals with the maps
  * */
 
 bool Server::usernameIsPaired(const char *username)
