@@ -58,7 +58,7 @@ bool JsonResponseParser::codeMatchesContent(int code, const Document &document)
     if (code == LOGOUT_APPROVED_CODE )
     {
         string result = document[CODE_DESCRIPTION].GetString();
-        if (strcmp(result.c_str(), LOGIN_FAILED) !=0)
+        if (strcmp(result.c_str(), LOGOUT_APPROVED) !=0)
         {
             return false;
         }
@@ -66,7 +66,7 @@ bool JsonResponseParser::codeMatchesContent(int code, const Document &document)
     if (code == LOGIN_FAILED_CODE )
     {
         string result = document[CODE_DESCRIPTION].GetString();
-        if (strcmp(result.c_str(), LOGOUT_APPROVED) !=0)
+        if (strcmp(result.c_str(), LOGIN_FAILED) !=0)
         {
             return false;
         }

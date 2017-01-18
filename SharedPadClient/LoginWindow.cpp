@@ -29,7 +29,7 @@ void LoginWindow::onLoginButtonPressed()
         {
         case LOGIN_FAILED_CODE :
         {
-            QMessageBox::critical(this,"Login failed!","The username you provided is already registered.");
+            QMessageBox::critical(this,"Login failed!","The username you provided is already registered. Try again.");
             break;
         }
         case LOGIN_APPROVED_CODE :
@@ -40,6 +40,7 @@ void LoginWindow::onLoginButtonPressed()
             HeartBeatSender *sender = new HeartBeatSender();
             sender->setUsername(username);
             sender->sendUpdates();
+            this->destroy();
             break;
         }
         case CONNECTION_FAILED_CODE:
@@ -56,6 +57,7 @@ void LoginWindow::onLoginButtonPressed()
                 notepadWindow = new NotepadWindow(this);
                 notepadWindow->setUsername(username);
                 notepadWindow->show();
+                this->destroy();
             }
             else
             {
@@ -65,5 +67,4 @@ void LoginWindow::onLoginButtonPressed()
         }
         }
     }
-    this->destroy();
-}
+    }
