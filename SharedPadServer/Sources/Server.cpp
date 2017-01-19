@@ -6,16 +6,6 @@ const in_port_t Server::port = 2024;
 map<string, User> *Server::loggedUsers;
 map<string, string> *Server::pairs;
 
-auto startListeningSession_logger = spd::stdout_color_mt("startListeningSession_logger");
-auto handleClient_logger = spd::stdout_color_mt("handleClient_logger");
-auto readJsonRequestLength_logger = spd::stdout_color_mt("readJsonRequestLength_logger");
-auto readJsonRequest_logger = spd::stdout_color_mt("readJsonRequest_logger");
-auto sendResponse_logger = spd::stdout_color_mt("sendResponse_logger");
-auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
-auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
-auto heartbeat_logger = spd::stdout_color_mt("heartbeat_logger");
-auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
-
 Server::Server()
 {
     memset(&configuration, 0, sizeof(struct sockaddr_in));
@@ -28,6 +18,16 @@ Server::Server()
 
     startDisconnectingService();
 }
+
+auto startListeningSession_logger = spd::stdout_color_mt("startListeningSession_logger");
+auto handleClient_logger = spd::stdout_color_mt("handleClient_logger");
+auto readJsonRequestLength_logger = spd::stdout_color_mt("readJsonRequestLength_logger");
+auto readJsonRequest_logger = spd::stdout_color_mt("readJsonRequest_logger");
+auto sendResponse_logger = spd::stdout_color_mt("sendResponse_logger");
+auto executeRequest_logger = spd::stdout_color_mt("executeRequest_logger");
+auto handleDisconnecting_logger = spd::stdout_color_mt("handleDisconnecting_logger");
+auto heartbeat_logger = spd::stdout_color_mt("heartbeat_logger");
+auto pairRequest_logger = spd::stdout_color_mt("pairRequest_logger");
 
 void Server::startListeningSession()
 {
@@ -45,7 +45,7 @@ void Server::startListeningSession()
     {
         ErrorHandler::exitFailure("CRITICAL - Binding failed.\n");
     }
-    if (-1 == listen(serverSocketFD, SOMAXCONN))
+    if (-1 == listen(serverSocketFD, 5))
     {
         ErrorHandler::exitFailure("CRITICAL - Listening failed.\n");
     }
@@ -205,10 +205,8 @@ GenericResponse *Server::executeHeartbeatConfirmation(const Document *document)
     {
         timeval now; gettimeofday(&now, NULL);
         loggedUsers->at(username).updateLastCheck(now);
-
         heartbeat_logger->warn("HEARTBEAT CONFIRMATION");
         heartbeat_logger->warn(username);
-
         return SpecializedResponse::getHeartBeatApprovedResponse();
     }
 }
@@ -337,7 +335,7 @@ GenericResponse *Server::executeCheckNewsRequest(const Document *document)
 }
 
 /**
- * The server has a disconnecting service that removes inactive clients based on their heartbeat coinfirmations.
+ * The server has a disconnecting service that removes inactive clients based on their heartbeat confirmations.
  * */
 void Server::startDisconnectingService()
 {
@@ -395,7 +393,6 @@ int Server::readJsonRequestLength(const ClientInformation *currentClient)
         strcat(prefix, currentCharacter);
         totalBytesRead += count;
     }
-
     if (!stringContainsOnlyDigits(prefix))
     {
         pthread_detach(pthread_self());

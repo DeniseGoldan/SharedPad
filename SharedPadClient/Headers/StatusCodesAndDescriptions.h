@@ -12,10 +12,7 @@ const int JSON_PARSING_FAILED_CODE = 401;
 //WRITING
 const char *const WRITE_FAILED = "write_failed";
 const int WRITE_FAILED_CODE = 402;
-// client related
-const char *const CLIENT_IP_ADDRESS = "client_ip_address";
-const char *const CLIENT_PORT = "client_port";
-// Response and Request specific fields
+//Response and Request specific fields
 const char *const COMMAND = "command";
 const char *const ARGUMENTS = "arguments";
 const char *const CODE = "code";

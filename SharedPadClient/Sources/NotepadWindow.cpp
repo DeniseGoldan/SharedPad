@@ -154,7 +154,7 @@ void NotepadWindow::onPairButtonPressed()
         }
         case ALREADY_PAIRED_CODE :
         {
-            QMessageBox::information(this,"Not approved!","You already have a pair.");
+            QMessageBox::information(this,"Not approved!","Already paired.");
             break;
         }
         case USER_NOT_LOGGED_IN_CODE :
